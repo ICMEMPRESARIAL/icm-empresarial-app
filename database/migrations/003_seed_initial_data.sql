@@ -11,6 +11,17 @@ insert into public.empresas (
 )
 values
   (
+    'Administracion ICM',
+    'administracion-icm',
+    'organismo',
+    'Administracion educativa',
+    'Organismo interno de supervision y administracion de la simulacion ICM Empresarial.',
+    '#1f4f8f',
+    null,
+    false,
+    true
+  ),
+  (
     'ICM Administracion',
     'icm-administracion',
     'organismo',

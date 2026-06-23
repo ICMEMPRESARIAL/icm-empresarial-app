@@ -47,7 +47,9 @@ UUID_EMPRESA
 
 Cada usuario autenticado necesita una fila en `public.profiles`.
 
-La profesora administradora puede tener `empresa_id = null`.
+La profesora administradora puede tener `empresa_id = null` si solo va a supervisar.
+
+Para que la profesora administradora pueda responder correspondencia, debe tener `empresa_id` asociado al organismo interno `Administracion ICM`.
 
 Los usuarios con rol `empresa` deben tener `empresa_id` porque la base tiene una constraint que lo exige.
 
@@ -114,7 +116,30 @@ left join public.empresas e on e.id = p.empresa_id
 order by p.created_at desc;
 ```
 
-## 7. Probar login local
+## 7. Permitir que profesora_admin responda correspondencia
+
+Buscar el organismo interno `Administracion ICM`:
+
+```sql
+select id, nombre, slug, tipo
+from public.empresas
+where slug = 'administracion-icm';
+```
+
+Copiar el `id` y usarlo como `UUID_EMPRESA`.
+
+Si la profesora administradora solo va a supervisar, puede quedar con `empresa_id = null`.
+
+Si tambien va a responder mensajes, asociar su perfil al organismo:
+
+```sql
+update public.profiles
+set empresa_id = 'UUID_EMPRESA'
+where id = 'UUID_USUARIO_PROFESORA'
+  and rol = 'profesora_admin';
+```
+
+## 8. Probar login local
 
 Crear `icm-empresarial-app/.env.local` con:
 

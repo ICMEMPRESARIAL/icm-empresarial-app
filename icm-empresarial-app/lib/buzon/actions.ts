@@ -208,6 +208,12 @@ export async function replyCorrespondenciaAction(formData: FormData) {
   }
 
   if (!profile.empresa_id) {
+    if (profile.rol === "profesora_admin") {
+      throw new Error(
+        "Para responder correspondencia, la cuenta administradora debe estar asociada a un organismo interno."
+      );
+    }
+
     throw new Error("El usuario no tiene una empresa asociada para responder.");
   }
 
