@@ -13,6 +13,14 @@ const navItems = [
   { href: "/perfil-empresa", label: "Perfil de empresa" }
 ] as const;
 
+const adminItems = [
+  { href: "/admin", label: "Admin" },
+  { href: "/admin/empresas", label: "Admin > Empresas" },
+  { href: "/admin/usuarios", label: "Admin > Usuarios" },
+  { href: "/admin/auditoria", label: "Admin > Auditoría" },
+  { href: "/admin/correspondencia", label: "Admin > Correspondencia" }
+] as const;
+
 export function Sidebar({ profile }: SidebarProps) {
   return (
     <aside className="hidden min-h-screen w-64 shrink-0 border-r border-border bg-white px-4 py-6 lg:block">
@@ -36,14 +44,17 @@ export function Sidebar({ profile }: SidebarProps) {
           </Link>
         ))}
 
-        {profile.rol === "profesora_admin" ? (
-          <Link
-            className="block rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface"
-            href="/admin"
-          >
-            Admin
-          </Link>
-        ) : null}
+        {profile.rol === "profesora_admin"
+          ? adminItems.map((item) => (
+              <Link
+                className="block rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface"
+                href={item.href}
+                key={item.href}
+              >
+                {item.label}
+              </Link>
+            ))
+          : null}
       </nav>
     </aside>
   );
