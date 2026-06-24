@@ -13,7 +13,7 @@ export function AppShell({ children, profile }: AppShellProps) {
       <Sidebar profile={profile} />
       <div className="min-w-0 flex-1">
         <Topbar profile={profile} />
-        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
           {children}
         </main>
       </div>

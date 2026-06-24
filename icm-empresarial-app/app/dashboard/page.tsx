@@ -37,6 +37,10 @@ export default async function DashboardPage() {
           <h1 className="mt-1 text-3xl font-semibold text-ink">
             Hola, {profile.nombre}
           </h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted">
+            Accesos principales para operar la simulación empresarial dentro de
+            la plataforma.
+          </p>
           <dl className="mt-4 grid gap-3 text-sm text-muted sm:grid-cols-3">
             <div>
               <dt className="font-medium text-ink">Rol</dt>
@@ -56,8 +60,13 @@ export default async function DashboardPage() {
         <section className="grid gap-4 md:grid-cols-2">
           {cards.map((card) => (
             <Link key={card.href} href={card.href}>
-              <Card className="h-full transition hover:border-brand hover:shadow-sm">
-                <h2 className="text-lg font-semibold text-ink">{card.title}</h2>
+              <Card className="h-full transition hover:-translate-y-0.5 hover:border-brand hover:shadow-md">
+                <div className="flex items-start justify-between gap-4">
+                  <h2 className="text-lg font-semibold text-ink">
+                    {card.title}
+                  </h2>
+                  <span className="text-sm font-medium text-brand">Abrir</span>
+                </div>
                 <p className="mt-2 text-sm text-muted">{card.description}</p>
               </Card>
             </Link>

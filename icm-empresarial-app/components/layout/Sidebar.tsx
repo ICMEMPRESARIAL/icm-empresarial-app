@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
 
 type SidebarProps = {
@@ -15,25 +16,34 @@ const navItems = [
 
 const adminItems = [
   { href: "/admin", label: "Admin" },
-  { href: "/admin/empresas", label: "Admin > Empresas" },
-  { href: "/admin/usuarios", label: "Admin > Usuarios" },
-  { href: "/admin/auditoria", label: "Admin > Auditoría" },
-  { href: "/admin/correspondencia", label: "Admin > Correspondencia" }
+  { href: "/admin/correspondencia", label: "Correspondencia" },
+  { href: "/admin/empresas", label: "Empresas" },
+  { href: "/admin/usuarios", label: "Usuarios" },
+  { href: "/admin/auditoria", label: "Auditoría" }
 ] as const;
 
 export function Sidebar({ profile }: SidebarProps) {
   return (
-    <aside className="hidden min-h-screen w-64 shrink-0 border-r border-border bg-white px-4 py-6 lg:block">
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-          ICM Empresarial
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          {profile.empresa?.nombre ?? "Administración"}
-        </p>
+    <aside className="hidden min-h-screen w-72 shrink-0 border-r border-border bg-white lg:flex lg:flex-col">
+      <div className="border-b border-border px-5 py-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-sm font-semibold text-white">
+            ICM
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-ink">ICM Empresarial</p>
+            <p className="truncate text-xs text-muted">
+              {profile.empresa?.nombre ?? profile.nombre}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <nav className="space-y-1">
+      <nav className="flex-1 space-y-6 px-4 py-5">
+        <div>
+          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
+            Plataforma
+          </p>
         {navItems.map((item) => (
           <Link
             className="block rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface"
@@ -43,9 +53,14 @@ export function Sidebar({ profile }: SidebarProps) {
             {item.label}
           </Link>
         ))}
+        </div>
 
-        {profile.rol === "profesora_admin"
-          ? adminItems.map((item) => (
+        {profile.rol === "profesora_admin" ? (
+          <div>
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
+              Admin
+            </p>
+            {adminItems.map((item) => (
               <Link
                 className="block rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface"
                 href={item.href}
@@ -53,9 +68,15 @@ export function Sidebar({ profile }: SidebarProps) {
               >
                 {item.label}
               </Link>
-            ))
-          : null}
+            ))}
+          </div>
+        ) : null}
       </nav>
+
+      <div className="border-t border-border px-5 py-5">
+        <p className="mb-3 truncate text-xs text-muted">{profile.nombre}</p>
+        <LogoutButton className="w-full" />
+      </div>
     </aside>
   );
 }
