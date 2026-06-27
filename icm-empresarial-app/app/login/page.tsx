@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -34,6 +35,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="mt-6">
               <LogoutButton />
             </div>
+            <Link
+              className="mt-3 inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+              href="/login"
+            >
+              Volver a iniciar sesión
+            </Link>
           </Card>
         </section>
       </main>

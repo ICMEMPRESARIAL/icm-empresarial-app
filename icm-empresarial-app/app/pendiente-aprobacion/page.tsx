@@ -20,18 +20,20 @@ export default async function PendienteAprobacionPage() {
             Pendiente de aprobación
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted">
-            Tu cuenta fue creada y está pendiente de aprobación por la
-            profesora. Cuando sea aprobada, vas a poder entrar al dashboard y
-            usar el buzón empresarial.
+            Tu cuenta está pendiente de aprobación por la profesora.
+          </p>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Cuando sea aprobada, vas a poder entrar al dashboard y usar la
+            plataforma.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            {session.user ? <LogoutButton /> : null}
             <Link
-              className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-white transition hover:bg-[#183f73]"
               href="/login"
             >
-              Ir al login
+              Volver al inicio de sesión
             </Link>
+            {session.user ? <LogoutButton /> : null}
           </div>
         </Card>
       </section>

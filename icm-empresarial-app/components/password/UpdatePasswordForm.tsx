@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -65,6 +66,12 @@ export function UpdatePasswordForm() {
         <Button className="w-full" disabled={isSubmitting} type="submit">
           {isSubmitting ? "Actualizando..." : "Actualizar contraseña"}
         </Button>
+        <Link
+          className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+          href="/login"
+        >
+          Volver a iniciar sesión
+        </Link>
       </form>
     </Card>
   );

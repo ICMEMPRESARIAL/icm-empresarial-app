@@ -16,13 +16,19 @@ export default function RecuperarPasswordPage() {
             Te enviaremos un enlace para crear una nueva contraseña.
           </p>
           <Link
-            className="mt-3 inline-flex text-sm font-medium text-brand hover:underline"
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
             href="/login"
           >
-            Volver al login
+            Volver a iniciar sesión
           </Link>
         </div>
         <RecoverPasswordForm />
+        <Link
+          className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+          href="/login"
+        >
+          Volver a iniciar sesión
+        </Link>
       </section>
     </main>
   );

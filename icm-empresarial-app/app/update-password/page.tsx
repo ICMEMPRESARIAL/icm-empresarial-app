@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { UpdatePasswordForm } from "@/components/password/UpdatePasswordForm";
 
 export default function UpdatePasswordPage() {
@@ -14,6 +15,12 @@ export default function UpdatePasswordPage() {
           <p className="mt-2 text-sm text-muted">
             Ingresá y confirmá tu nueva contraseña.
           </p>
+          <Link
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+            href="/login"
+          >
+            Volver a iniciar sesión
+          </Link>
         </div>
         <UpdatePasswordForm />
       </section>

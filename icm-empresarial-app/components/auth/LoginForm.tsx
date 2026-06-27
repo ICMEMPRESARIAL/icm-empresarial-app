@@ -95,20 +95,29 @@ export function LoginForm() {
         />
 
         {errorMessage ? (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {errorMessage}
-          </p>
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p>{errorMessage}</p>
+            <Link
+              className="mt-2 inline-flex font-medium text-red-800 underline"
+              href="/recuperar-password"
+            >
+              Recuperar contraseña
+            </Link>
+          </div>
         ) : null}
 
         <Button className="w-full" disabled={isSubmitting} type="submit">
           {isSubmitting ? "Ingresando..." : "Ingresar"}
         </Button>
-        <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <Link className="font-medium text-brand hover:underline" href="/registro">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link
+            className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+            href="/registro"
+          >
             Crear cuenta
           </Link>
           <Link
-            className="font-medium text-brand hover:underline"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
             href="/recuperar-password"
           >
             Olvidé mi contraseña
