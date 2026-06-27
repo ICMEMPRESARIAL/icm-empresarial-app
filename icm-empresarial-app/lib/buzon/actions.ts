@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { getUserProfile } from "@/lib/auth/get-user-profile";
 import { logAction } from "@/lib/audit/log-action";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -10,6 +11,7 @@ import {
   type CorrespondenciaDetail,
   type CorrespondenciaTipo
 } from "@/lib/buzon/types";
+import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -75,8 +77,64 @@ function isParticipante(
   );
 }
 
+async function assertActiveProfileForMessaging(
+  profile: ProfileWithEmpresa,
+  userId: string,
+  action: "enviar" | "responder"
+) {
+  if (profile.estado === "activo") {
+    return;
+  }
+
+  if (profile.estado === "pendiente") {
+    throw new Error("Tu cuenta todavía está pendiente de aprobación.");
+  }
+
+  const accion =
+    action === "enviar"
+      ? "intento_envio_usuario_suspendido"
+      : "intento_respuesta_usuario_suspendido";
+
+  if (profile.estado === "suspendido") {
+    await logAction({
+      accion,
+      actorId: userId,
+      detalle: {
+        profile_id: profile.id
+      },
+      objeto: "profile"
+    });
+
+    throw new Error(
+      "Tu usuario está suspendido. No podés enviar mensajes. Consultá con la profesora administradora."
+    );
+  }
+
+  throw new Error("El usuario fue dado de baja y no puede operar el buzón.");
+}
+
+async function getAuthForBuzonMutation() {
+  const session = await getUserProfile();
+
+  if (!session.user) {
+    redirect("/login");
+  }
+
+  if (!session.profile) {
+    throw new Error(
+      "El usuario autenticado no tiene un perfil asignado en profiles."
+    );
+  }
+
+  return {
+    profile: session.profile,
+    user: session.user
+  };
+}
+
 export async function createCorrespondenciaAction(formData: FormData) {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await getAuthForBuzonMutation();
+  await assertActiveProfileForMessaging(profile, user.id, "enviar");
 
   if (!profile.empresa_id) {
     throw new Error("El usuario no tiene una empresa asociada para enviar.");
@@ -197,7 +255,8 @@ export async function markCorrespondenciaAsReadAction(id: string) {
 }
 
 export async function replyCorrespondenciaAction(formData: FormData) {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await getAuthForBuzonMutation();
+  await assertActiveProfileForMessaging(profile, user.id, "responder");
   const correspondenciaId = getRequiredString(formData, "correspondencia_id");
   const contenido = getRequiredString(formData, "contenido");
 
@@ -227,13 +286,15 @@ export async function replyCorrespondenciaAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error: respuestaError } = await supabase
+  const { data: respuesta, error: respuestaError } = await supabase
     .from("correspondencia_respuestas")
     .insert({
       contenido,
       correspondencia_id: correspondenciaId,
       empresa_id: profile.empresa_id
-    });
+    })
+    .select("id")
+    .single<{ id: string }>();
 
   if (respuestaError) {
     throw new Error(`No se pudo responder: ${respuestaError.message}`);
@@ -255,7 +316,8 @@ export async function replyCorrespondenciaAction(formData: FormData) {
     actorId: user.id,
     detalle: {
       correspondencia_id: correspondenciaId,
-      empresa_id: profile.empresa_id
+      empresa_id: profile.empresa_id,
+      respuesta_id: respuesta.id
     },
     objeto: "correspondencia_respuestas"
   });

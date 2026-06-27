@@ -8,6 +8,14 @@ export default async function HomePage() {
     redirect("/login");
   }
 
+  if (session.profile?.estado === "pendiente") {
+    redirect("/pendiente-aprobacion");
+  }
+
+  if (session.profile?.estado === "dado_de_baja") {
+    redirect("/login");
+  }
+
   if (session.profile?.rol === "profesora_admin") {
     redirect("/admin");
   }

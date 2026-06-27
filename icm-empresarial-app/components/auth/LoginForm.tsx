@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -8,8 +9,10 @@ import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 
 type ProfileRole = "empresa" | "profesora_admin";
+type ProfileEstado = "pendiente" | "activo" | "suspendido" | "dado_de_baja";
 
 type ProfileResponse = {
+  estado: ProfileEstado;
   rol: ProfileRole;
 };
 
@@ -41,7 +44,7 @@ export function LoginForm() {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("rol")
+      .select("rol,estado")
       .eq("id", authData.user.id)
       .single<ProfileResponse>();
 
@@ -51,6 +54,19 @@ export function LoginForm() {
         "El usuario existe, pero todavía no tiene un perfil asignado."
       );
       setIsSubmitting(false);
+      return;
+    }
+
+    if (profile.estado === "dado_de_baja") {
+      await supabase.auth.signOut();
+      setErrorMessage("El usuario fue dado de baja. Consultá con la profesora administradora.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (profile.estado === "pendiente") {
+      router.replace("/pendiente-aprobacion");
+      router.refresh();
       return;
     }
 
@@ -87,6 +103,17 @@ export function LoginForm() {
         <Button className="w-full" disabled={isSubmitting} type="submit">
           {isSubmitting ? "Ingresando..." : "Ingresar"}
         </Button>
+        <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <Link className="font-medium text-brand hover:underline" href="/registro">
+            Crear cuenta
+          </Link>
+          <Link
+            className="font-medium text-brand hover:underline"
+            href="/recuperar-password"
+          >
+            Olvidé mi contraseña
+          </Link>
+        </div>
       </form>
     </Card>
   );

@@ -6,6 +6,11 @@ import { requireAuth } from "@/lib/auth/require-auth";
 
 const adminCards = [
   {
+    title: "Solicitudes",
+    description: "Aprobación de alumnos y creación de entidades internas.",
+    href: "/admin/solicitudes"
+  },
+  {
     title: "Empresas",
     description: "Alta, edición y estado de empresas y organismos.",
     href: "/admin/empresas"

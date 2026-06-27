@@ -132,7 +132,6 @@ export async function getAuditLogsForCorrespondencia(id: string) {
   const { data, error } = await supabase
     .from("audit_logs")
     .select("id,actor_id,accion,objeto,detalle,created_at")
-    .eq("objeto", "correspondencia")
     .contains("detalle", { correspondencia_id: id })
     .order("created_at", { ascending: false })
     .returns<AuditLogItem[]>();

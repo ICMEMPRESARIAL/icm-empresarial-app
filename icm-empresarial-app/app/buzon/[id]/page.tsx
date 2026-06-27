@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
-import { MailDetail } from "@/components/buzon/MailDetail";
-import { markCorrespondenciaAsReadAction } from "@/lib/buzon/actions";
+import { ChatThread } from "@/components/buzon/ChatThread";
 import {
   getCorrespondenciaById,
   getCorrespondenciaRespuestas
 } from "@/lib/buzon/queries";
+import { markCorrespondenciaAsReadOnOpen } from "@/lib/buzon/read-status";
 import { requireAuth } from "@/lib/auth/require-auth";
 
 type BuzonDetailPageProps = {
@@ -31,7 +31,7 @@ export default async function BuzonDetailPage({
     mensaje.estado === "enviado" &&
     (isDestinatario || profile.rol === "profesora_admin")
   ) {
-    const wasMarked = await markCorrespondenciaAsReadAction(mensaje.id);
+    const wasMarked = await markCorrespondenciaAsReadOnOpen(mensaje.id);
 
     if (wasMarked) {
       mensaje = {
@@ -46,7 +46,7 @@ export default async function BuzonDetailPage({
 
   return (
     <AppShell profile={profile}>
-      <MailDetail mensaje={mensaje} profile={profile} respuestas={respuestas} />
+      <ChatThread mensaje={mensaje} profile={profile} respuestas={respuestas} />
     </AppShell>
   );
 }

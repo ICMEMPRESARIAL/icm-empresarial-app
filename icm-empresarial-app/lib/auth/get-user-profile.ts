@@ -2,6 +2,11 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 export type ProfileRole = "empresa" | "profesora_admin";
+export type ProfileEstado =
+  | "pendiente"
+  | "activo"
+  | "suspendido"
+  | "dado_de_baja";
 
 export type EmpresaSummary = {
   id: string;
@@ -16,6 +21,10 @@ export type ProfileWithEmpresa = {
   rol: ProfileRole;
   empresa_id: string | null;
   empresa: EmpresaSummary | null;
+  estado: ProfileEstado;
+  suspendido_motivo: string | null;
+  suspendido_at: string | null;
+  suspendido_por: string | null;
 };
 
 export type UserProfileResult = {
@@ -30,6 +39,10 @@ type ProfileRow = {
   rol: ProfileRole;
   empresa_id: string | null;
   empresas: EmpresaSummary | null;
+  estado: ProfileEstado;
+  suspendido_motivo: string | null;
+  suspendido_at: string | null;
+  suspendido_por: string | null;
 };
 
 export async function getUserProfile(): Promise<UserProfileResult> {
@@ -50,7 +63,7 @@ export async function getUserProfile(): Promise<UserProfileResult> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id,nombre,rol,empresa_id,empresas:empresa_id(id,nombre,slug,tipo)"
+      "id,nombre,rol,empresa_id,estado,suspendido_motivo,suspendido_at,suspendido_por,empresas:empresa_id(id,nombre,slug,tipo)"
     )
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
@@ -76,9 +89,13 @@ export async function getUserProfile(): Promise<UserProfileResult> {
     profile: {
       empresa: data.empresas,
       empresa_id: data.empresa_id,
+      estado: data.estado,
       id: data.id,
       nombre: data.nombre,
-      rol: data.rol
+      rol: data.rol,
+      suspendido_at: data.suspendido_at,
+      suspendido_motivo: data.suspendido_motivo,
+      suspendido_por: data.suspendido_por
     },
     user
   };

@@ -1,6 +1,8 @@
 import { MessageStatusBadge } from "@/components/buzon/MessageStatusBadge";
 import { MessageTypeBadge } from "@/components/buzon/MessageTypeBadge";
+import { suspendUserAction } from "@/lib/admin/usuarios/actions";
 import { AdminModerationActions } from "@/components/admin/correspondencia/AdminModerationActions";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { AuditLogItem } from "@/lib/admin/correspondencia/queries";
 import type {
@@ -25,11 +27,59 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function getAuditActorId(
+  auditoria: AuditLogItem[],
+  accion: string,
+  detalleKey?: string,
+  detalleValue?: string
+) {
+  const log = auditoria.find((item) => {
+    if (item.accion !== accion) {
+      return false;
+    }
+
+    if (!detalleKey || !detalleValue) {
+      return true;
+    }
+
+    return item.detalle[detalleKey] === detalleValue;
+  });
+
+  return log?.actor_id ?? null;
+}
+
+function SuspendSenderForm({ profileId }: { profileId: string | null }) {
+  if (!profileId) {
+    return (
+      <p className="mt-3 text-xs text-muted">
+        No hay usuario emisor registrado en auditoría.
+      </p>
+    );
+  }
+
+  return (
+    <form action={suspendUserAction} className="mt-4 flex flex-col gap-2 sm:flex-row">
+      <input name="profile_id" type="hidden" value={profileId} />
+      <input
+        className="h-10 min-w-0 flex-1 rounded-md border border-border bg-white px-3 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+        name="motivo"
+        placeholder="Motivo de suspensión"
+        required
+      />
+      <Button type="submit" variant="secondary">
+        Suspender usuario emisor
+      </Button>
+    </form>
+  );
+}
+
 export function AdminCorrespondenciaDetail({
   auditoria,
   mensaje,
   respuestas
 }: AdminCorrespondenciaDetailProps) {
+  const originalActorId = getAuditActorId(auditoria, "correspondencia_creada");
+
   return (
     <div className="space-y-6">
       <Card className={mensaje.reportado ? "border-red-200 bg-red-50/50" : ""}>
@@ -94,9 +144,13 @@ export function AdminCorrespondenciaDetail({
 
       <Card>
         <h2 className="text-lg font-semibold text-ink">Contenido</h2>
+        <p className="mt-2 text-xs text-muted">
+          Usuario emisor: {originalActorId ?? "No disponible"}
+        </p>
         <p className="mt-4 whitespace-pre-line text-sm leading-6 text-muted">
           {mensaje.contenido}
         </p>
+        <SuspendSenderForm profileId={originalActorId} />
       </Card>
 
       <section className="space-y-4">
@@ -106,7 +160,15 @@ export function AdminCorrespondenciaDetail({
             No hay respuestas registradas.
           </div>
         ) : (
-          respuestas.map((respuesta) => (
+          respuestas.map((respuesta) => {
+            const respuestaActorId = getAuditActorId(
+              auditoria,
+              "correspondencia_respondida",
+              "respuesta_id",
+              respuesta.id
+            );
+
+            return (
             <Card key={respuesta.id}>
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-medium text-ink">
@@ -119,11 +181,16 @@ export function AdminCorrespondenciaDetail({
                   {formatDate(respuesta.created_at)}
                 </time>
               </div>
+              <p className="mt-2 text-xs text-muted">
+                Usuario emisor: {respuestaActorId ?? "No disponible"}
+              </p>
               <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">
                 {respuesta.contenido}
               </p>
+              <SuspendSenderForm profileId={respuestaActorId} />
             </Card>
-          ))
+            );
+          })
         )}
       </section>
 

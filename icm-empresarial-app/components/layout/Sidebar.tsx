@@ -16,6 +16,7 @@ const navItems = [
 
 const adminItems = [
   { href: "/admin", label: "Admin" },
+  { href: "/admin/solicitudes", label: "Solicitudes" },
   { href: "/admin/correspondencia", label: "Correspondencia" },
   { href: "/admin/empresas", label: "Empresas" },
   { href: "/admin/usuarios", label: "Usuarios" },

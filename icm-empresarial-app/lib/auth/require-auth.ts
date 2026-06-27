@@ -14,6 +14,14 @@ export async function requireAuth() {
     );
   }
 
+  if (session.profile.estado === "dado_de_baja") {
+    redirect("/login?error=dado_de_baja");
+  }
+
+  if (session.profile.estado === "pendiente") {
+    redirect("/pendiente-aprobacion");
+  }
+
   return {
     profile: session.profile,
     user: session.user

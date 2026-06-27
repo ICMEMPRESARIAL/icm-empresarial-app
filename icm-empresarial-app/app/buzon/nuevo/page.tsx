@@ -23,7 +23,17 @@ export default async function NuevoMensajePage() {
           </p>
         </section>
 
-        {profile.empresa_id ? (
+        {profile.estado === "suspendido" ? (
+          <Card className="border-amber-200 bg-amber-50">
+            <h2 className="text-lg font-semibold text-ink">
+              Usuario suspendido
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Tu usuario está suspendido. Podés consultar el contenido, pero no
+              enviar mensajes.
+            </p>
+          </Card>
+        ) : profile.empresa_id ? (
           <NewMessageForm destinatarios={destinatarios} />
         ) : (
           <Card>

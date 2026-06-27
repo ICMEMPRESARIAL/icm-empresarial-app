@@ -1,9 +1,44 @@
 import { redirect } from "next/navigation";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { Card } from "@/components/ui/Card";
 import { getUserProfile } from "@/lib/auth/get-user-profile";
 
-export default async function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{
+    password?: string;
+  }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getUserProfile();
+  const params = await searchParams;
+
+  if (session.profile?.estado === "pendiente") {
+    redirect("/pendiente-aprobacion");
+  }
+
+  if (session.profile?.estado === "dado_de_baja") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
+        <section className="w-full max-w-md">
+          <Card>
+            <p className="text-sm font-medium text-brand">ICM Empresarial</p>
+            <h1 className="mt-2 text-3xl font-semibold text-ink">
+              Cuenta dada de baja
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-muted">
+              Esta cuenta no puede acceder a la plataforma. Consultá con la
+              profesora administradora.
+            </p>
+            <div className="mt-6">
+              <LogoutButton />
+            </div>
+          </Card>
+        </section>
+      </main>
+    );
+  }
 
   if (session.profile?.rol === "profesora_admin") {
     redirect("/admin");
@@ -27,6 +62,11 @@ export default async function LoginPage() {
             Ingresá con tu usuario para operar dentro del entorno empresarial.
           </p>
         </div>
+        {params.password === "updated" ? (
+          <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Contraseña actualizada. Ya podés ingresar.
+          </p>
+        ) : null}
         <LoginForm />
       </section>
     </main>
