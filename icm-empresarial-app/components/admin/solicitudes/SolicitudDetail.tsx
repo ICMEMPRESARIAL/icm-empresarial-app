@@ -40,6 +40,10 @@ function DetailItem({
 
 export function SolicitudDetail({ solicitud }: SolicitudDetailProps) {
   const isPending = solicitud.estado === "pendiente";
+  const curso =
+    solicitud.curso_anio && solicitud.curso_division
+      ? `${solicitud.curso_anio}° ${solicitud.curso_division}`
+      : solicitud.curso;
 
   return (
     <div className="space-y-6">
@@ -70,17 +74,72 @@ export function SolicitudDetail({ solicitud }: SolicitudDetailProps) {
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-ink">Datos cargados</h2>
+        <h2 className="text-lg font-semibold text-ink">
+          Usuario responsable
+        </h2>
         <dl className="mt-4 grid gap-4 md:grid-cols-2">
           <DetailItem label="Alumno" value={solicitud.nombre_alumno} />
           <DetailItem label="Email" value={solicitud.email} />
-          <DetailItem label="Curso" value={solicitud.curso} />
           <DetailItem label="Teléfono" value={solicitud.telefono} />
+          <DetailItem label="Curso y división" value={curso} />
+        </dl>
+      </Card>
+
+      <Card>
+        <h2 className="text-lg font-semibold text-ink">
+          Integrantes del equipo
+        </h2>
+        {solicitud.integrantes.length === 0 ? (
+          <p className="mt-4 text-sm text-muted">
+            No hay integrantes registrados.
+          </p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b border-border text-xs uppercase text-muted">
+                <tr>
+                  <th className="py-2 pr-4 font-semibold">Nombre</th>
+                  <th className="py-2 pr-4 font-semibold">Email</th>
+                  <th className="py-2 pr-4 font-semibold">Rol</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {solicitud.integrantes.map((integrante, index) => (
+                  <tr key={`${integrante.nombre}-${index}`}>
+                    <td className="py-3 pr-4 text-ink">
+                      {integrante.nombre}
+                    </td>
+                    <td className="py-3 pr-4 text-muted">
+                      {integrante.email || "Sin informar"}
+                    </td>
+                    <td className="py-3 pr-4 text-muted">
+                      {integrante.rol || "Sin informar"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <h2 className="text-lg font-semibold text-ink">
+          Datos de empresa u organismo
+        </h2>
+        <dl className="mt-4 grid gap-4 md:grid-cols-2">
           <DetailItem label="Tipo de entidad" value={solicitud.tipo_entidad} />
           <DetailItem label="Figura legal" value={solicitud.figura_legal} />
           <DetailItem label="Rubro / área" value={solicitud.rubro} />
           <DetailItem label="Descripción" value={solicitud.descripcion} />
-          <DetailItem label="Socio mayor" value={solicitud.socio_mayor} />
+          <DetailItem
+            label="Socio responsable"
+            value={solicitud.socio_responsable ?? solicitud.socio_mayor}
+          />
+          <DetailItem
+            label="Persona jurídica"
+            value={solicitud.persona_juridica}
+          />
           <DetailItem label="Responsable" value={solicitud.responsable} />
           <DetailItem
             label="Cargo responsable"

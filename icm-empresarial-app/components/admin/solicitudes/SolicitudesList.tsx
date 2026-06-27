@@ -44,7 +44,11 @@ export function SolicitudesList({ solicitudes }: SolicitudesListProps) {
               </p>
               <p className="mt-1 text-xs text-muted">
                 {solicitud.tipo_entidad} · {solicitud.figura_legal}
-                {solicitud.curso ? ` · ${solicitud.curso}` : ""}
+                {solicitud.curso_anio && solicitud.curso_division
+                  ? ` · ${solicitud.curso_anio}° ${solicitud.curso_division}`
+                  : solicitud.curso
+                    ? ` · ${solicitud.curso}`
+                    : ""}
               </p>
             </div>
             <time className="text-xs text-muted" dateTime={solicitud.created_at}>

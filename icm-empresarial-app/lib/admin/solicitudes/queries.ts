@@ -9,12 +9,21 @@ export type FiguraLegalRegistro =
   | "organismo_publico"
   | "banco";
 
+export type SolicitudIntegrante = {
+  email?: string;
+  nombre: string;
+  rol?: string;
+};
+
 export type SolicitudRegistro = {
   id: string;
   user_id: string;
   nombre_alumno: string;
   email: string;
   curso: string | null;
+  curso_anio: "4" | "5" | "6" | null;
+  curso_division: "A" | "B" | "C" | null;
+  integrantes: SolicitudIntegrante[];
   telefono: string | null;
   nombre_entidad: string;
   tipo_entidad: TipoEntidadRegistro;
@@ -22,6 +31,8 @@ export type SolicitudRegistro = {
   rubro: string | null;
   descripcion: string | null;
   socio_mayor: string | null;
+  socio_responsable: string | null;
+  persona_juridica: string | null;
   responsable: string | null;
   cargo_responsable: string | null;
   cuit_simulado: string | null;
@@ -40,6 +51,9 @@ const solicitudSelect = `
   nombre_alumno,
   email,
   curso,
+  curso_anio,
+  curso_division,
+  integrantes,
   telefono,
   nombre_entidad,
   tipo_entidad,
@@ -47,6 +61,8 @@ const solicitudSelect = `
   rubro,
   descripcion,
   socio_mayor,
+  socio_responsable,
+  persona_juridica,
   responsable,
   cargo_responsable,
   cuit_simulado,
