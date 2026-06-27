@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { EmpresaTypeBadge } from "@/components/empresas/EmpresaTypeBadge";
 import type { Empresa } from "@/lib/empresas/types";
@@ -34,6 +35,14 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
         <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">
           {empresa.descripcion ?? "Sin descripcion interna cargada."}
         </p>
+        {empresa.tipo === "organismo" ? (
+          <Link
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-white transition hover:bg-[#183f73]"
+            href={`/organismos/${empresa.slug}/tramites`}
+          >
+            Ver trámites del organismo
+          </Link>
+        ) : null}
       </Card>
 
       <Card>

@@ -10,6 +10,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/empresas", label: "Empresas" },
   { href: "/organismos", label: "Organismos" },
+  { href: "/tramites", label: "Trámites" },
   { href: "/buzon", label: "Buzón" },
   { href: "/perfil-empresa", label: "Perfil de empresa" }
 ] as const;
@@ -18,6 +19,7 @@ const adminItems = [
   { href: "/admin", label: "Admin" },
   { href: "/admin/solicitudes", label: "Solicitudes" },
   { href: "/admin/correspondencia", label: "Correspondencia" },
+  { href: "/admin/tramites", label: "Trámites" },
   { href: "/admin/empresas", label: "Empresas" },
   { href: "/admin/usuarios", label: "Usuarios" },
   { href: "/admin/auditoria", label: "Auditoría" }

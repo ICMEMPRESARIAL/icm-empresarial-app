@@ -5,6 +5,7 @@ const protectedPrefixes = [
   "/dashboard",
   "/empresas",
   "/organismos",
+  "/tramites",
   "/buzon",
   "/perfil-empresa",
   "/admin"

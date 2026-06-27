@@ -29,6 +29,11 @@ const adminCards = [
     title: "Correspondencia",
     description: "Supervisión y moderación de mensajes internos.",
     href: "/admin/correspondencia"
+  },
+  {
+    title: "Trámites",
+    description: "Supervisión global de expedientes y organismos.",
+    href: "/admin/tramites"
   }
 ] as const;
 
