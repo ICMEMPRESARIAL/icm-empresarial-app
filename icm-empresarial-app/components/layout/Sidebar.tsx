@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BarChart3,
   Building2,
@@ -12,8 +14,10 @@ import {
   ShieldCheck,
   Users
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ComponentType } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { SidebarNav, type SidebarNavItem } from "@/components/layout/SidebarNav";
 import { Avatar } from "@/components/ui/Avatar";
 import { StatusPill } from "@/components/ui/StatusPill";
 import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
@@ -22,20 +26,26 @@ type SidebarProps = {
   profile: ProfileWithEmpresa;
 };
 
-const platformItems: SidebarNavItem[] = [
+type SidebarItem = {
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+};
+
+const platformItems: SidebarItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/empresas", icon: Building2, label: "Empresas" },
   { href: "/organismos", icon: Landmark, label: "Organismos" },
   { href: "/perfil-empresa", icon: ShieldCheck, label: "Perfil" }
 ];
 
-const operationItems: SidebarNavItem[] = [
+const operationItems: SidebarItem[] = [
   { href: "/buzon", icon: Mail, label: "Buzón" },
   { href: "/tramites", icon: ClipboardCheck, label: "Trámites" },
   { href: "/facturas", icon: FileText, label: "Facturas" }
 ];
 
-const adminItems: SidebarNavItem[] = [
+const adminItems: SidebarItem[] = [
   { href: "/admin", icon: BarChart3, label: "Admin" },
   { href: "/admin/solicitudes", icon: Inbox, label: "Solicitudes" },
   { href: "/admin/usuarios", icon: Users, label: "Usuarios" },
@@ -76,6 +86,36 @@ function estadoStatus(estado: ProfileWithEmpresa["estado"]) {
   }
 
   return "inactive";
+}
+
+function SidebarNav({ items }: { items: SidebarItem[] }) {
+  const pathname = usePathname();
+
+  return (
+    <div className="space-y-1">
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active =
+          pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+        return (
+          <Link
+            className={[
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+              active
+                ? "bg-brand text-white shadow-sm"
+                : "text-slate-700 hover:bg-surface hover:text-ink"
+            ].join(" ")}
+            href={item.href}
+            key={item.href}
+          >
+            <Icon className="h-4 w-4" />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
 }
 
 export function Sidebar({ profile }: SidebarProps) {
