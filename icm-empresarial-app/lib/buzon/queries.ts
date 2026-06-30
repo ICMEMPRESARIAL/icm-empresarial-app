@@ -108,7 +108,7 @@ export async function getDestinatariosDisponibles() {
   let query = supabase
     .from("empresas")
     .select(
-      "id,nombre,slug,tipo,rubro,descripcion,logo,color_marca,sitio_externo,visible_en_directorio,activo,created_at"
+      "id,nombre,slug,tipo,rubro,descripcion,logo,logo_url,banner_url,color_marca,figura_legal,razon_social,nombre_comercial,slogan,cuit_simulado,domicilio,actividad_principal,curso_anio,curso_division,integrantes,responsable,persona_juridica,socio_responsable,contacto_email,contacto_telefono,sitio_externo,visible_en_directorio,activo,created_at"
     )
     .eq("activo", true)
     .eq("visible_en_directorio", true)

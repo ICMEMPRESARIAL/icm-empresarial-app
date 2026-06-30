@@ -1,4 +1,5 @@
 import { EmpresaCard } from "@/components/empresas/EmpresaCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { Empresa } from "@/lib/empresas/types";
 
 type EmpresaGridProps = {
@@ -13,11 +14,7 @@ export function EmpresaGrid({
   empresas
 }: EmpresaGridProps) {
   if (empresas.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-border bg-white p-8 text-center text-sm text-muted">
-        {emptyMessage}
-      </div>
-    );
+    return <EmptyState description={emptyMessage} title="Sin resultados" />;
   }
 
   return (
@@ -27,6 +24,7 @@ export function EmpresaGrid({
           empresa={empresa}
           href={`${basePath}/${empresa.slug}`}
           key={empresa.id}
+          showOrganismoActions={basePath === "/organismos"}
         />
       ))}
     </div>

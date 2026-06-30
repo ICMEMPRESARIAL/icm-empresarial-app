@@ -9,13 +9,13 @@ type AppShellProps = {
 
 export function AppShell({ children, profile }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-surface lg:flex">
+    <div className="min-h-screen bg-[#f4f7fb] lg:flex">
       <Sidebar profile={profile} />
       <div className="min-w-0 flex-1">
         <Topbar profile={profile} />
-        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
+        <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
           {profile.estado === "suspendido" ? (
-            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-sm">
               Usuario suspendido: no podés enviar mensajes ni responder.
             </div>
           ) : null}

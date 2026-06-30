@@ -12,16 +12,17 @@
   "dependencies": {
     "@supabase/ssr": "0.12.0",
     "@supabase/supabase-js": "2.108.2",
+    "lucide-react": "^1.22.0",
     "next": "15.5.19",
     "react": "19.2.1",
     "react-dom": "19.2.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.3",
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "autoprefixer": "10.4.22",
-    "@eslint/eslintrc": "3.3.3",
     "eslint": "9.39.1",
     "eslint-config-next": "15.5.19",
     "postcss": "8.5.6",

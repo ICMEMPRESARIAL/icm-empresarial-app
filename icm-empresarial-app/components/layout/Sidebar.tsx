@@ -1,77 +1,148 @@
-import Link from "next/link";
+import {
+  BarChart3,
+  Building2,
+  ClipboardCheck,
+  FileText,
+  Gavel,
+  Inbox,
+  LayoutDashboard,
+  Landmark,
+  Mail,
+  ScrollText,
+  ShieldCheck,
+  Users
+} from "lucide-react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { SidebarNav, type SidebarNavItem } from "@/components/layout/SidebarNav";
+import { Avatar } from "@/components/ui/Avatar";
+import { StatusPill } from "@/components/ui/StatusPill";
 import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
 
 type SidebarProps = {
   profile: ProfileWithEmpresa;
 };
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/empresas", label: "Empresas" },
-  { href: "/organismos", label: "Organismos" },
-  { href: "/tramites", label: "Trámites" },
-  { href: "/buzon", label: "Buzón" },
-  { href: "/perfil-empresa", label: "Perfil de empresa" }
-] as const;
+const platformItems: SidebarNavItem[] = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/empresas", icon: Building2, label: "Empresas" },
+  { href: "/organismos", icon: Landmark, label: "Organismos" },
+  { href: "/perfil-empresa", icon: ShieldCheck, label: "Perfil" }
+];
 
-const adminItems = [
-  { href: "/admin", label: "Admin" },
-  { href: "/admin/solicitudes", label: "Solicitudes" },
-  { href: "/admin/correspondencia", label: "Correspondencia" },
-  { href: "/admin/tramites", label: "Trámites" },
-  { href: "/admin/empresas", label: "Empresas" },
-  { href: "/admin/usuarios", label: "Usuarios" },
-  { href: "/admin/auditoria", label: "Auditoría" }
-] as const;
+const operationItems: SidebarNavItem[] = [
+  { href: "/buzon", icon: Mail, label: "Buzón" },
+  { href: "/tramites", icon: ClipboardCheck, label: "Trámites" },
+  { href: "/facturas", icon: FileText, label: "Facturas" }
+];
+
+const adminItems: SidebarNavItem[] = [
+  { href: "/admin", icon: BarChart3, label: "Admin" },
+  { href: "/admin/solicitudes", icon: Inbox, label: "Solicitudes" },
+  { href: "/admin/usuarios", icon: Users, label: "Usuarios" },
+  { href: "/admin/empresas", icon: Building2, label: "Empresas" },
+  { href: "/admin/correspondencia", icon: Mail, label: "Correspondencia" },
+  { href: "/admin/tramites", icon: ClipboardCheck, label: "Trámites" },
+  { href: "/admin/facturas", icon: ScrollText, label: "Facturas/Pagos" },
+  { href: "/admin/auditoria", icon: Gavel, label: "Auditoría" }
+];
+
+function estadoLabel(estado: ProfileWithEmpresa["estado"]) {
+  if (estado === "activo") {
+    return "Activo";
+  }
+
+  if (estado === "pendiente") {
+    return "Pendiente";
+  }
+
+  if (estado === "suspendido") {
+    return "Suspendido";
+  }
+
+  return "Dado de baja";
+}
+
+function estadoStatus(estado: ProfileWithEmpresa["estado"]) {
+  if (estado === "activo") {
+    return "active";
+  }
+
+  if (estado === "pendiente") {
+    return "pending";
+  }
+
+  if (estado === "suspendido") {
+    return "suspended";
+  }
+
+  return "inactive";
+}
 
 export function Sidebar({ profile }: SidebarProps) {
+  const avatarName = profile.empresa?.nombre ?? profile.nombre;
+
   return (
-    <aside className="hidden min-h-screen w-72 shrink-0 border-r border-border bg-white lg:flex lg:flex-col">
-      <div className="border-b border-border px-5 py-6">
+    <aside className="hidden min-h-screen shrink-0 border-r border-border bg-white/95 lg:flex lg:w-80 lg:flex-col">
+      <div className="border-b border-border px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-sm font-semibold text-white">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand text-sm font-bold text-white shadow-sm">
             ICM
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-ink">ICM Empresarial</p>
-            <p className="truncate text-xs text-muted">
-              {profile.empresa?.nombre ?? profile.nombre}
-            </p>
+            <p className="text-xs text-muted">Mundo empresarial simulado</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-6 px-4 py-5">
+      <div className="border-b border-border px-5 py-5">
+        <div className="flex items-center gap-3">
+          <Avatar
+            alt={avatarName}
+            color={profile.empresa?.color_marca}
+            name={avatarName}
+            src={profile.empresa?.logo_url ?? profile.empresa?.logo}
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-ink">
+              {avatarName}
+            </p>
+            <p className="truncate text-xs text-muted">
+              {profile.rol === "profesora_admin"
+                ? "Profesora admin"
+                : profile.empresa?.tipo ?? "Empresa"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3">
+          <StatusPill
+            label={estadoLabel(profile.estado)}
+            status={estadoStatus(profile.estado)}
+          />
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
         <div>
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
             Plataforma
           </p>
-        {navItems.map((item) => (
-          <Link
-            className="block rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface"
-            href={item.href}
-            key={item.href}
-          >
-            {item.label}
-          </Link>
-        ))}
+          <SidebarNav items={platformItems} />
+        </div>
+
+        <div>
+          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
+            Operación
+          </p>
+          <SidebarNav items={operationItems} />
         </div>
 
         {profile.rol === "profesora_admin" ? (
           <div>
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
-              Admin
+              Administración
             </p>
-            {adminItems.map((item) => (
-              <Link
-                className="block rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface"
-                href={item.href}
-                key={item.href}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <SidebarNav items={adminItems} />
           </div>
         ) : null}
       </nav>

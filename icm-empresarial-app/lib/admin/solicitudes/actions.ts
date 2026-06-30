@@ -131,10 +131,23 @@ export async function approveSolicitudAction(formData: FormData) {
     .from("empresas")
     .insert({
       activo: true,
+      actividad_principal: solicitud.actividad_principal,
+      cuit_simulado: solicitud.cuit_simulado,
       descripcion: solicitud.descripcion,
+      domicilio: solicitud.domicilio,
+      figura_legal: solicitud.figura_legal,
+      curso_anio: solicitud.curso_anio,
+      curso_division: solicitud.curso_division,
+      integrantes: solicitud.integrantes,
       nombre: solicitud.nombre_entidad,
+      nombre_comercial: solicitud.nombre_entidad,
+      persona_juridica: solicitud.persona_juridica,
+      razon_social: solicitud.nombre_entidad,
+      responsable: solicitud.responsable,
       rubro: solicitud.rubro,
       slug,
+      socio_responsable:
+        solicitud.socio_responsable ?? solicitud.socio_mayor,
       tipo,
       visible_en_directorio: true
     })

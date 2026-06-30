@@ -13,6 +13,9 @@ export type EmpresaSummary = {
   nombre: string;
   slug: string;
   tipo: "servicio" | "bien" | "organismo";
+  color_marca: string | null;
+  logo: string | null;
+  logo_url: string | null;
 };
 
 export type ProfileWithEmpresa = {
@@ -63,7 +66,7 @@ export async function getUserProfile(): Promise<UserProfileResult> {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id,nombre,rol,empresa_id,estado,suspendido_motivo,suspendido_at,suspendido_por,empresas:empresa_id(id,nombre,slug,tipo)"
+      "id,nombre,rol,empresa_id,estado,suspendido_motivo,suspendido_at,suspendido_por,empresas:empresa_id(id,nombre,slug,tipo,logo,logo_url,color_marca)"
     )
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
