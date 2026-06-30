@@ -147,8 +147,10 @@ Crear `icm-empresarial-app/.env.local` con:
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=URL_DEL_PROYECTO_SUPABASE
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=CLAVE_PUBLICA_SUPABASE
-SUPABASE_SECRET_KEY=CLAVE_SECRETA_SUPABASE
 ```
+
+La app usa el cliente SSR con la sesión del usuario. No hace falta configurar
+`SUPABASE_SECRET_KEY` para la demo.
 
 Instalar dependencias y ejecutar la app:
 

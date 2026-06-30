@@ -7,6 +7,7 @@ const protectedPrefixes = [
   "/organismos",
   "/tramites",
   "/facturas",
+  "/pagos",
   "/estudio-contable",
   "/buzon",
   "/perfil-empresa",
