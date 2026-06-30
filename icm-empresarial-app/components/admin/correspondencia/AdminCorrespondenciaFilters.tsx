@@ -3,6 +3,7 @@ import type { AdminCorrespondenciaFilter } from "@/lib/admin/correspondencia/que
 
 type AdminCorrespondenciaFiltersProps = {
   activeFilter: AdminCorrespondenciaFilter;
+  search?: string;
 };
 
 const filters: Array<{ label: string; value: AdminCorrespondenciaFilter }> = [
@@ -16,19 +17,22 @@ const filters: Array<{ label: string; value: AdminCorrespondenciaFilter }> = [
 ];
 
 export function AdminCorrespondenciaFilters({
-  activeFilter
+  activeFilter,
+  search
 }: AdminCorrespondenciaFiltersProps) {
+  const query = search ? `&q=${encodeURIComponent(search)}` : "";
+
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 rounded-2xl border border-border bg-white p-2 shadow-sm">
       {filters.map((filter) => (
         <Link
           className={[
-            "rounded-md border px-3 py-2 text-sm font-medium transition",
+            "rounded-xl border px-3 py-2 text-sm font-medium transition",
             filter.value === activeFilter
               ? "border-brand bg-brand text-white"
               : "border-border bg-white text-ink hover:bg-surface"
           ].join(" ")}
-          href={`/admin/correspondencia?filter=${filter.value}`}
+          href={`/admin/correspondencia?filter=${filter.value}${query}`}
           key={filter.value}
         >
           {filter.label}

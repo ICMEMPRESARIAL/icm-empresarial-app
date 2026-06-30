@@ -1,9 +1,11 @@
 import { MessageStatusBadge } from "@/components/buzon/MessageStatusBadge";
 import { MessageTypeBadge } from "@/components/buzon/MessageTypeBadge";
+import { ReplyForm } from "@/components/buzon/ReplyForm";
 import { suspendUserAction } from "@/lib/admin/usuarios/actions";
 import { AdminModerationActions } from "@/components/admin/correspondencia/AdminModerationActions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
 import type { AuditLogItem } from "@/lib/admin/correspondencia/queries";
 import type {
   CorrespondenciaDetail,
@@ -13,6 +15,7 @@ import type {
 type AdminCorrespondenciaDetailProps = {
   auditoria: AuditLogItem[];
   mensaje: CorrespondenciaDetail;
+  profile: ProfileWithEmpresa;
   respuestas: CorrespondenciaRespuesta[];
 };
 
@@ -76,9 +79,11 @@ function SuspendSenderForm({ profileId }: { profileId: string | null }) {
 export function AdminCorrespondenciaDetail({
   auditoria,
   mensaje,
+  profile,
   respuestas
 }: AdminCorrespondenciaDetailProps) {
   const originalActorId = getAuditActorId(auditoria, "correspondencia_creada");
+  const canAdminReply = profile.estado === "activo" && Boolean(profile.empresa_id);
 
   return (
     <div className="space-y-6">
@@ -193,6 +198,23 @@ export function AdminCorrespondenciaDetail({
           })
         )}
       </section>
+
+      <Card>
+        <h2 className="text-lg font-semibold text-ink">Respuesta docente</h2>
+        {canAdminReply ? (
+          <div className="mt-4">
+            <ReplyForm
+              correspondenciaId={mensaje.id}
+              redirectTo={`/admin/correspondencia/${mensaje.id}`}
+            />
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted">
+            Para responder desde administración, la cuenta profesora_admin debe
+            estar asociada a un organismo interno, por ejemplo Administración ICM.
+          </p>
+        )}
+      </Card>
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-ink">Auditoría relacionada</h2>

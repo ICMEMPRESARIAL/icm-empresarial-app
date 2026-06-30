@@ -6,12 +6,14 @@ import {
 import { MessageStatusBadge } from "@/components/buzon/MessageStatusBadge";
 import { MessageTypeBadge } from "@/components/buzon/MessageTypeBadge";
 import { ReplyForm } from "@/components/buzon/ReplyForm";
+import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
 import type {
   CorrespondenciaDetail,
-  CorrespondenciaRespuesta
+  CorrespondenciaRespuesta,
+  EmpresaMini
 } from "@/lib/buzon/types";
 
 type ChatThreadProps = {
@@ -22,7 +24,7 @@ type ChatThreadProps = {
 
 type BubbleProps = {
   contenido: string;
-  empresaNombre: string;
+  empresa: EmpresaMini | null;
   fecha: string;
   propio: boolean;
 };
@@ -43,9 +45,29 @@ function canReply(profile: ProfileWithEmpresa, mensaje: CorrespondenciaDetail) {
   );
 }
 
-function ChatBubble({ contenido, empresaNombre, fecha, propio }: BubbleProps) {
+function empresaName(empresa: EmpresaMini | null) {
+  return empresa?.nombre_comercial ?? empresa?.nombre ?? "Empresa";
+}
+
+function ChatBubble({ contenido, empresa, fecha, propio }: BubbleProps) {
+  const nombre = empresaName(empresa);
+
   return (
-    <div className={propio ? "flex justify-end" : "flex justify-start"}>
+    <div
+      className={[
+        "flex items-end gap-2",
+        propio ? "justify-end" : "justify-start"
+      ].join(" ")}
+    >
+      {!propio ? (
+        <Avatar
+          alt={`Logo de ${nombre}`}
+          className="h-9 w-9"
+          color={empresa?.color_marca}
+          name={nombre}
+          src={empresa?.logo_url}
+        />
+      ) : null}
       <article
         className={[
           "max-w-[88%] rounded-2xl px-4 py-3 shadow-sm sm:max-w-[72%]",
@@ -60,7 +82,7 @@ function ChatBubble({ contenido, empresaNombre, fecha, propio }: BubbleProps) {
             propio ? "text-white/80" : "text-muted"
           ].join(" ")}
         >
-          {empresaNombre}
+          {nombre}
         </p>
         <p className="mt-2 whitespace-pre-line text-sm leading-6">{contenido}</p>
         <time
@@ -73,6 +95,15 @@ function ChatBubble({ contenido, empresaNombre, fecha, propio }: BubbleProps) {
           {formatDate(fecha)}
         </time>
       </article>
+      {propio ? (
+        <Avatar
+          alt={`Logo de ${nombre}`}
+          className="h-9 w-9"
+          color={empresa?.color_marca}
+          name={nombre}
+          src={empresa?.logo_url}
+        />
+      ) : null}
     </div>
   );
 }
@@ -88,6 +119,8 @@ export function ChatThread({
     canReply(profile, mensaje) &&
     Boolean(profile.empresa_id);
   const showSuspendedNotice = profile.estado === "suspendido";
+  const showBlockedNotice =
+    profile.estado === "pendiente" || profile.estado === "dado_de_baja";
   const showAdminReplyNotice =
     profile.rol === "profesora_admin" &&
     profile.estado === "activo" &&
@@ -109,8 +142,12 @@ export function ChatThread({
               {mensaje.asunto}
             </h1>
             <p className="mt-2 text-sm text-muted">
-              {mensaje.remitente?.nombre ?? "Sin remitente"} a{" "}
-              {mensaje.destinatario?.nombre ?? "Sin destinatario"}
+              {empresaName(mensaje.remitente)} a {empresaName(mensaje.destinatario)} ·{" "}
+              {formatDate(mensaje.created_at)}
+            </p>
+            <p className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+              Esta conversación forma parte de la simulación empresarial y puede
+              ser monitoreada por la profesora.
             </p>
           </div>
 
@@ -153,7 +190,7 @@ export function ChatThread({
         <div className="space-y-4">
           <ChatBubble
             contenido={mensaje.contenido}
-            empresaNombre={mensaje.remitente?.nombre ?? "Empresa"}
+            empresa={mensaje.remitente}
             fecha={mensaje.created_at}
             propio={isOriginalOwn}
           />
@@ -161,7 +198,7 @@ export function ChatThread({
           {respuestas.map((respuesta) => (
             <ChatBubble
               contenido={respuesta.contenido}
-              empresaNombre={respuesta.empresa?.nombre ?? "Empresa"}
+              empresa={respuesta.empresa}
               fecha={respuesta.created_at}
               key={respuesta.id}
               propio={respuesta.empresa_id === profile.empresa_id}
@@ -175,6 +212,19 @@ export function ChatThread({
           <p className="text-sm font-medium text-amber-900">
             Tu usuario está suspendido. Podés consultar el contenido, pero no
             enviar mensajes.
+          </p>
+          {profile.suspendido_motivo ? (
+            <p className="mt-2 text-sm text-amber-900">
+              Motivo: {profile.suspendido_motivo}
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {showBlockedNotice ? (
+        <Card className="border-slate-200 bg-slate-50">
+          <p className="text-sm font-medium text-ink">
+            Tu usuario no está habilitado para responder esta conversación.
           </p>
         </Card>
       ) : null}

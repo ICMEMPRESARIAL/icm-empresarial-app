@@ -40,6 +40,7 @@ export default async function AdminCorrespondenciaDetailPage({
       <AdminCorrespondenciaDetail
         auditoria={auditoria}
         mensaje={mensaje}
+        profile={profile}
         respuestas={respuestas}
       />
     </AppShell>

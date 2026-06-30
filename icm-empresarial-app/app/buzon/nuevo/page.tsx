@@ -13,13 +13,14 @@ export default async function NuevoMensajePage() {
   return (
     <AppShell profile={profile}>
       <div className="space-y-6">
-        <section>
+        <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-brand">Buzón</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">
             Nuevo mensaje
           </h1>
           <p className="mt-2 text-sm text-muted">
-            El remitente se obtiene automáticamente desde tu perfil.
+            El remitente se obtiene automáticamente desde tu perfil. No hace
+            falta elegir desde qué empresa escribís.
           </p>
         </section>
 

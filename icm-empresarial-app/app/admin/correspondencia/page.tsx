@@ -11,6 +11,7 @@ import { requireAuth } from "@/lib/auth/require-auth";
 type AdminCorrespondenciaPageProps = {
   searchParams: Promise<{
     filter?: string;
+    q?: string;
   }>;
 };
 
@@ -25,7 +26,8 @@ export default async function AdminCorrespondenciaPage({
 
   const params = await searchParams;
   const filter = normalizeAdminCorrespondenciaFilter(params.filter);
-  const items = await getAllCorrespondenciaForAdmin(filter);
+  const search = params.q?.trim() ?? "";
+  const items = await getAllCorrespondenciaForAdmin(filter, search);
 
   return (
     <AppShell profile={profile}>
@@ -40,7 +42,21 @@ export default async function AdminCorrespondenciaPage({
           </p>
         </section>
 
-        <AdminCorrespondenciaFilters activeFilter={filter} />
+        <form className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <input name="filter" type="hidden" value={filter} />
+          <label className="block text-sm font-medium text-ink">
+            Buscar
+            <input
+              className="mt-2 h-11 w-full rounded-lg border border-border bg-white px-3 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+              defaultValue={search}
+              name="q"
+              placeholder="Buscar por asunto, remitente o destinatario"
+              type="search"
+            />
+          </label>
+        </form>
+
+        <AdminCorrespondenciaFilters activeFilter={filter} search={search} />
         <AdminCorrespondenciaList items={items} />
       </div>
     </AppShell>

@@ -8,7 +8,7 @@ import type {
   CorrespondenciaRespuesta
 } from "@/lib/buzon/types";
 
-const empresaMiniSelect = "id,nombre,slug,tipo";
+const empresaMiniSelect = "id,nombre,nombre_comercial,slug,tipo,logo_url,color_marca";
 
 const correspondenciaSelect = `
   id,
@@ -33,6 +33,7 @@ export function normalizeBuzonFilter(value: string | string[] | undefined) {
     candidate === "recibidos" ||
     candidate === "enviados" ||
     candidate === "archivados" ||
+    candidate === "reportados" ||
     candidate === "todos"
   ) {
     return candidate satisfies BuzonFilter;
@@ -71,8 +72,14 @@ export async function getCorrespondenciaForCurrentUser(filter: BuzonFilter) {
     if (filter === "archivados") {
       query = query.eq("estado", "archivado");
     }
+
+    if (filter === "reportados") {
+      query = query.eq("reportado", true);
+    }
   } else if (filter === "archivados") {
     query = query.eq("estado", "archivado");
+  } else if (filter === "reportados") {
+    query = query.eq("reportado", true);
   } else if (filter === "recibidos" || filter === "enviados") {
     query = query.neq("estado", "archivado");
   }
@@ -108,7 +115,7 @@ export async function getDestinatariosDisponibles() {
   let query = supabase
     .from("empresas")
     .select(
-      "id,nombre,slug,tipo,rubro,descripcion,logo,logo_url,banner_url,color_marca,figura_legal,razon_social,nombre_comercial,slogan,cuit_simulado,domicilio,actividad_principal,curso_anio,curso_division,integrantes,responsable,persona_juridica,socio_responsable,contacto_email,contacto_telefono,sitio_externo,visible_en_directorio,activo,created_at"
+      "id,nombre,slug,tipo,rubro,descripcion,logo,logo_url,banner_url,color_marca,figura_legal,razon_social,nombre_comercial,slogan,cuit_simulado,domicilio,actividad_principal,curso_anio,curso_division,integrantes,responsable,persona_juridica,socio_responsable,contacto_email,contacto_telefono,sitio_web,instagram,publicado,sitio_externo,visible_en_directorio,activo,created_at"
     )
     .eq("activo", true)
     .eq("visible_en_directorio", true)

@@ -13,6 +13,23 @@ import {
 } from "@/lib/buzon/types";
 import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
 
+export type CreateCorrespondenciaFormState = {
+  error: string | null;
+  fieldErrors: {
+    asunto?: string;
+    contenido?: string;
+    destinatario_empresa_id?: string;
+    tipo?: string;
+  };
+};
+
+export type ReplyCorrespondenciaFormState = {
+  error: string | null;
+  fieldErrors: {
+    contenido?: string;
+  };
+};
+
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -26,18 +43,39 @@ function getRequiredString(formData: FormData, field: string) {
   return value.trim();
 }
 
+function getFormString(formData: FormData, field: string) {
+  const value = formData.get(field);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function isUuid(value: string) {
+  return uuidPattern.test(value);
+}
+
 function assertUuid(value: string, field: string) {
   if (!uuidPattern.test(value)) {
     throw new Error(`El campo ${field} no es valido.`);
   }
 }
 
-function parseTipo(value: string): CorrespondenciaTipo {
-  if (correspondenciaTipos.includes(value as CorrespondenciaTipo)) {
-    return value as CorrespondenciaTipo;
-  }
+function createCorrespondenciaError(
+  error: string,
+  fieldErrors: CreateCorrespondenciaFormState["fieldErrors"] = {}
+): CreateCorrespondenciaFormState {
+  return {
+    error,
+    fieldErrors
+  };
+}
 
-  throw new Error("El tipo de correspondencia no es valido.");
+function replyCorrespondenciaError(
+  error: string,
+  fieldErrors: ReplyCorrespondenciaFormState["fieldErrors"] = {}
+): ReplyCorrespondenciaFormState {
+  return {
+    error,
+    fieldErrors
+  };
 }
 
 async function getMensajeForAction(id: string) {
@@ -132,36 +170,75 @@ async function getAuthForBuzonMutation() {
   };
 }
 
-export async function createCorrespondenciaAction(formData: FormData) {
+export async function createCorrespondenciaAction(
+  _previousState: CreateCorrespondenciaFormState,
+  formData: FormData
+): Promise<CreateCorrespondenciaFormState> {
   const { profile, user } = await getAuthForBuzonMutation();
-  await assertActiveProfileForMessaging(profile, user.id, "enviar");
 
-  if (!profile.empresa_id) {
-    throw new Error("El usuario no tiene una empresa asociada para enviar.");
+  try {
+    await assertActiveProfileForMessaging(profile, user.id, "enviar");
+  } catch (error) {
+    return createCorrespondenciaError(
+      error instanceof Error
+        ? error.message
+        : "No podés enviar mensajes con este usuario."
+    );
   }
 
-  const destinatarioEmpresaId = getRequiredString(
+  if (!profile.empresa_id) {
+    return createCorrespondenciaError(
+      "El usuario no tiene una empresa asociada para enviar."
+    );
+  }
+
+  const destinatarioEmpresaId = getFormString(
     formData,
     "destinatario_empresa_id"
   );
-  const tipo = parseTipo(getRequiredString(formData, "tipo"));
-  const asunto = getRequiredString(formData, "asunto");
-  const contenido = getRequiredString(formData, "contenido");
+  const tipoValue = getFormString(formData, "tipo");
+  const asunto = getFormString(formData, "asunto");
+  const contenido = getFormString(formData, "contenido");
+  const fieldErrors: CreateCorrespondenciaFormState["fieldErrors"] = {};
 
-  assertUuid(destinatarioEmpresaId, "destinatario_empresa_id");
-
-  if (asunto.length < 3) {
-    throw new Error("El asunto debe tener al menos 3 caracteres.");
+  if (!destinatarioEmpresaId) {
+    fieldErrors.destinatario_empresa_id = "Seleccioná un destinatario.";
+  } else if (!isUuid(destinatarioEmpresaId)) {
+    fieldErrors.destinatario_empresa_id = "El destinatario no es válido.";
   }
 
-  if (contenido.length < 5) {
-    throw new Error("El contenido debe tener al menos 5 caracteres.");
+  if (!tipoValue) {
+    fieldErrors.tipo = "Seleccioná un tipo de mensaje.";
+  } else if (!correspondenciaTipos.includes(tipoValue as CorrespondenciaTipo)) {
+    fieldErrors.tipo = "El tipo de mensaje no es válido.";
+  }
+
+  if (!asunto) {
+    fieldErrors.asunto = "Ingresá un asunto.";
+  } else if (asunto.length < 3) {
+    fieldErrors.asunto = "El asunto debe tener al menos 3 caracteres.";
+  }
+
+  if (!contenido) {
+    fieldErrors.contenido = "Ingresá el contenido del mensaje.";
+  } else if (contenido.length < 5) {
+    fieldErrors.contenido = "El contenido debe tener al menos 5 caracteres.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return createCorrespondenciaError("Revisá los datos del mensaje.", fieldErrors);
   }
 
   if (destinatarioEmpresaId === profile.empresa_id) {
-    throw new Error("No se puede enviar correspondencia a la misma empresa.");
+    return createCorrespondenciaError(
+      "No se puede enviar correspondencia a la misma empresa.",
+      {
+        destinatario_empresa_id: "Elegí otra empresa u organismo."
+      }
+    );
   }
 
+  const tipo = tipoValue as CorrespondenciaTipo;
   const supabase = await createClient();
   const { data: destinatario, error: destinatarioError } = await supabase
     .from("empresas")
@@ -172,11 +249,15 @@ export async function createCorrespondenciaAction(formData: FormData) {
     .maybeSingle<{ id: string }>();
 
   if (destinatarioError) {
-    throw new Error(`No se pudo validar destinatario: ${destinatarioError.message}`);
+    return createCorrespondenciaError(
+      `No se pudo validar destinatario: ${destinatarioError.message}`
+    );
   }
 
   if (!destinatario) {
-    throw new Error("El destinatario no esta disponible.");
+    return createCorrespondenciaError("El destinatario no está disponible.", {
+      destinatario_empresa_id: "Seleccioná otro destinatario."
+    });
   }
 
   const { data, error } = await supabase
@@ -192,7 +273,9 @@ export async function createCorrespondenciaAction(formData: FormData) {
     .single<{ id: string }>();
 
   if (error) {
-    throw new Error(`No se pudo crear la correspondencia: ${error.message}`);
+    return createCorrespondenciaError(
+      `No se pudo crear la correspondencia: ${error.message}`
+    );
   }
 
   await logAction({
@@ -254,26 +337,55 @@ export async function markCorrespondenciaAsReadAction(id: string) {
   return true;
 }
 
-export async function replyCorrespondenciaAction(formData: FormData) {
+export async function replyCorrespondenciaAction(
+  _previousState: ReplyCorrespondenciaFormState,
+  formData: FormData
+): Promise<ReplyCorrespondenciaFormState> {
   const { profile, user } = await getAuthForBuzonMutation();
-  await assertActiveProfileForMessaging(profile, user.id, "responder");
-  const correspondenciaId = getRequiredString(formData, "correspondencia_id");
-  const contenido = getRequiredString(formData, "contenido");
 
-  assertUuid(correspondenciaId, "correspondencia_id");
+  try {
+    await assertActiveProfileForMessaging(profile, user.id, "responder");
+  } catch (error) {
+    return replyCorrespondenciaError(
+      error instanceof Error
+        ? error.message
+        : "No podés responder mensajes con este usuario."
+    );
+  }
+
+  const correspondenciaId = getFormString(formData, "correspondencia_id");
+  const contenido = getFormString(formData, "contenido");
+  const redirectTo = getFormString(formData, "redirect_to");
+
+  if (!isUuid(correspondenciaId)) {
+    return replyCorrespondenciaError("La conversación no es válida.");
+  }
+
+  if (!contenido) {
+    return replyCorrespondenciaError("Ingresá una respuesta.", {
+      contenido: "La respuesta es obligatoria."
+    });
+  }
 
   if (contenido.length < 5) {
-    throw new Error("La respuesta debe tener al menos 5 caracteres.");
+    return replyCorrespondenciaError(
+      "La respuesta debe tener al menos 5 caracteres.",
+      {
+        contenido: "Escribí una respuesta un poco más completa."
+      }
+    );
   }
 
   if (!profile.empresa_id) {
     if (profile.rol === "profesora_admin") {
-      throw new Error(
+      return replyCorrespondenciaError(
         "Para responder correspondencia, la cuenta administradora debe estar asociada a un organismo interno."
       );
     }
 
-    throw new Error("El usuario no tiene una empresa asociada para responder.");
+    return replyCorrespondenciaError(
+      "El usuario no tiene una empresa asociada para responder."
+    );
   }
 
   const mensaje = await getMensajeForAction(correspondenciaId);
@@ -282,7 +394,9 @@ export async function replyCorrespondenciaAction(formData: FormData) {
     isParticipante(profile.empresa_id, mensaje);
 
   if (!canReply) {
-    throw new Error("No tenes permisos para responder esta correspondencia.");
+    return replyCorrespondenciaError(
+      "No tenés permisos para responder esta correspondencia."
+    );
   }
 
   const supabase = await createClient();
@@ -297,7 +411,9 @@ export async function replyCorrespondenciaAction(formData: FormData) {
     .single<{ id: string }>();
 
   if (respuestaError) {
-    throw new Error(`No se pudo responder: ${respuestaError.message}`);
+    return replyCorrespondenciaError(
+      `No se pudo responder: ${respuestaError.message}`
+    );
   }
 
   const { error: estadoError } = await supabase
@@ -308,7 +424,9 @@ export async function replyCorrespondenciaAction(formData: FormData) {
     .eq("id", correspondenciaId);
 
   if (estadoError) {
-    throw new Error(`No se pudo actualizar estado: ${estadoError.message}`);
+    return replyCorrespondenciaError(
+      `No se pudo actualizar estado: ${estadoError.message}`
+    );
   }
 
   await logAction({
@@ -324,7 +442,8 @@ export async function replyCorrespondenciaAction(formData: FormData) {
 
   revalidatePath("/buzon");
   revalidatePath(`/buzon/${correspondenciaId}`);
-  redirect(`/buzon/${correspondenciaId}`);
+  revalidatePath(`/admin/correspondencia/${correspondenciaId}`);
+  redirect(redirectTo || `/buzon/${correspondenciaId}`);
 }
 
 export async function archiveCorrespondenciaAction(formData: FormData) {

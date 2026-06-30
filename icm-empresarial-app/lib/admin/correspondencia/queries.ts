@@ -24,7 +24,7 @@ export type AuditLogItem = {
   created_at: string;
 };
 
-const empresaMiniSelect = "id,nombre,slug,tipo";
+const empresaMiniSelect = "id,nombre,nombre_comercial,slug,tipo,logo_url,color_marca";
 
 const correspondenciaSelect = `
   id,
@@ -69,7 +69,8 @@ export function normalizeAdminCorrespondenciaFilter(
 }
 
 export async function getAllCorrespondenciaForAdmin(
-  filter: AdminCorrespondenciaFilter
+  filter: AdminCorrespondenciaFilter,
+  search?: string | null
 ) {
   const { profile } = await requireAuth();
   requireAdminRole(profile.rol);
@@ -103,7 +104,23 @@ export async function getAllCorrespondenciaForAdmin(
     throw new Error(`No se pudo cargar correspondencia admin: ${error.message}`);
   }
 
-  return data;
+  const normalizedSearch = search?.trim().toLowerCase();
+
+  if (!normalizedSearch) {
+    return data;
+  }
+
+  return data.filter((item) => {
+    const remitente =
+      item.remitente?.nombre_comercial ?? item.remitente?.nombre ?? "";
+    const destinatario =
+      item.destinatario?.nombre_comercial ?? item.destinatario?.nombre ?? "";
+
+    return [item.asunto, item.contenido, remitente, destinatario]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearch);
+  });
 }
 
 export async function getCorrespondenciaByIdForAdmin(id: string) {

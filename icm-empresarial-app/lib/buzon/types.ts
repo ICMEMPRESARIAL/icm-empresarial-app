@@ -14,11 +14,19 @@ export type CorrespondenciaEstado =
   | "respondido"
   | "archivado";
 
-export type BuzonFilter = "recibidos" | "enviados" | "archivados" | "todos";
+export type BuzonFilter =
+  | "recibidos"
+  | "enviados"
+  | "archivados"
+  | "reportados"
+  | "todos";
 
 export type EmpresaMini = {
+  color_marca: string | null;
   id: string;
+  logo_url: string | null;
   nombre: string;
+  nombre_comercial: string | null;
   slug: string;
   tipo: EmpresaTipo;
 };
