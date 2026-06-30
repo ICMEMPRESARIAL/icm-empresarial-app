@@ -18,6 +18,8 @@ export type TipoTramite = {
   nombre: string;
   slug: string;
   descripcion: string | null;
+  categoria: string | null;
+  documentacion_esperada: string | null;
   requiere_adjunto: boolean;
   activo: boolean;
   created_at: string;
@@ -40,7 +42,12 @@ export type TramiteListItem = {
   finalizado_at: string | null;
   tipo_tramite: Pick<
     TipoTramite,
-    "id" | "nombre" | "slug" | "organismo_slug" | "requiere_adjunto"
+    | "id"
+    | "nombre"
+    | "slug"
+    | "organismo_slug"
+    | "categoria"
+    | "requiere_adjunto"
   > | null;
   solicitante: EmpresaMini | null;
   organismo: EmpresaMini | null;

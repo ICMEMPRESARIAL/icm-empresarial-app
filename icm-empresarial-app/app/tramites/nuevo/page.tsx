@@ -1,12 +1,40 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { NuevoTramiteForm } from "@/components/tramites/NuevoTramiteForm";
 import { Card } from "@/components/ui/Card";
-import { getTiposTramite } from "@/lib/tramites/queries";
+import {
+  getTiposTramite,
+  getTiposTramiteByOrganismoSlug
+} from "@/lib/tramites/queries";
 import { requireAuth } from "@/lib/auth/require-auth";
 
-export default async function NuevoTramitePage() {
+type NuevoTramitePageProps = {
+  searchParams: Promise<{
+    organismo?: string;
+    tipo?: string;
+  }>;
+};
+
+function getSearchValue(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
+export default async function NuevoTramitePage({
+  searchParams
+}: NuevoTramitePageProps) {
   const { profile } = await requireAuth();
-  const tipos = profile.estado === "activo" ? await getTiposTramite() : [];
+  const params = await searchParams;
+  const organismoSlug = getSearchValue(params.organismo);
+  const tipoSlug = getSearchValue(params.tipo);
+  const tipos =
+    profile.estado === "activo"
+      ? organismoSlug
+        ? await getTiposTramiteByOrganismoSlug(organismoSlug)
+        : await getTiposTramite()
+      : [];
 
   return (
     <AppShell profile={profile}>
@@ -22,7 +50,11 @@ export default async function NuevoTramitePage() {
         </section>
 
         {profile.estado === "activo" && profile.empresa_id ? (
-          <NuevoTramiteForm tipos={tipos} />
+          <NuevoTramiteForm
+            initialOrganismoSlug={organismoSlug}
+            initialTipoSlug={tipoSlug}
+            tipos={tipos}
+          />
         ) : (
           <Card>
             <h2 className="text-lg font-semibold text-ink">

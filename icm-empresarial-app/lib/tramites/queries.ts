@@ -26,7 +26,7 @@ const tramiteSelect = `
   created_at,
   updated_at,
   finalizado_at,
-  tipo_tramite:tipo_tramite_id(id,nombre,slug,organismo_slug,requiere_adjunto),
+  tipo_tramite:tipo_tramite_id(id,nombre,slug,organismo_slug,categoria,requiere_adjunto),
   solicitante:solicitante_empresa_id(${empresaMiniSelect}),
   organismo:organismo_empresa_id(${empresaMiniSelect})
 `;
@@ -44,6 +44,8 @@ export async function getTiposTramite() {
         nombre,
         slug,
         descripcion,
+        categoria,
+        documentacion_esperada,
         requiere_adjunto,
         activo,
         created_at,
@@ -74,6 +76,8 @@ export async function getTiposTramiteByOrganismoSlug(slug: string) {
         nombre,
         slug,
         descripcion,
+        categoria,
+        documentacion_esperada,
         requiere_adjunto,
         activo,
         created_at,

@@ -12,6 +12,15 @@ import {
   type TramiteEstado
 } from "@/lib/tramites/types";
 
+export type CreateTramiteFormState = {
+  error: string | null;
+  fieldErrors: {
+    asunto?: string;
+    descripcion?: string;
+    tipo_tramite_id?: string;
+  };
+};
+
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -25,6 +34,11 @@ function getRequiredString(formData: FormData, field: string) {
   return value.trim();
 }
 
+function getFormString(formData: FormData, field: string) {
+  const value = formData.get(field);
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function getOptionalString(formData: FormData, field: string) {
   const value = formData.get(field);
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -34,6 +48,20 @@ function assertUuid(value: string, field: string) {
   if (!uuidPattern.test(value)) {
     throw new Error(`El campo ${field} no es valido.`);
   }
+}
+
+function isUuid(value: string) {
+  return uuidPattern.test(value);
+}
+
+function createTramiteError(
+  error: string,
+  fieldErrors: CreateTramiteFormState["fieldErrors"] = {}
+): CreateTramiteFormState {
+  return {
+    error,
+    fieldErrors
+  };
 }
 
 function parseEstado(value: string): TramiteEstado {
@@ -182,25 +210,53 @@ async function updateEstado(input: {
   revalidatePath(`/admin/tramites/${input.tramiteId}`);
 }
 
-export async function createTramiteAction(formData: FormData) {
-  const { profile, user } = await assertActiveProfile();
+export async function createTramiteAction(
+  _previousState: CreateTramiteFormState,
+  formData: FormData
+): Promise<CreateTramiteFormState> {
+  const { profile, user } = await requireAuth();
+
+  if (profile.estado === "pendiente") {
+    return createTramiteError("Tu cuenta todavía está pendiente de aprobación.");
+  }
+
+  if (profile.estado === "suspendido") {
+    return createTramiteError("Tu usuario está suspendido. No podés operar trámites.");
+  }
+
+  if (profile.estado === "dado_de_baja") {
+    return createTramiteError("El usuario fue dado de baja y no puede operar trámites.");
+  }
 
   if (!profile.empresa_id) {
-    throw new Error("El usuario no tiene una empresa asociada.");
+    return createTramiteError("El usuario no tiene una empresa asociada.");
   }
 
-  const tipoTramiteId = getRequiredString(formData, "tipo_tramite_id");
-  const asunto = getRequiredString(formData, "asunto");
-  const descripcion = getRequiredString(formData, "descripcion");
+  const tipoTramiteId = getFormString(formData, "tipo_tramite_id");
+  const asunto = getFormString(formData, "asunto");
+  const descripcion = getFormString(formData, "descripcion");
+  const fieldErrors: CreateTramiteFormState["fieldErrors"] = {};
 
-  assertUuid(tipoTramiteId, "tipo_tramite_id");
-
-  if (asunto.length < 3) {
-    throw new Error("El asunto debe tener al menos 3 caracteres.");
+  if (!tipoTramiteId) {
+    fieldErrors.tipo_tramite_id = "Seleccioná un trámite.";
+  } else if (!isUuid(tipoTramiteId)) {
+    fieldErrors.tipo_tramite_id = "El trámite seleccionado no es válido.";
   }
 
-  if (descripcion.length < 8) {
-    throw new Error("La descripción debe tener al menos 8 caracteres.");
+  if (!asunto) {
+    fieldErrors.asunto = "Ingresá un asunto.";
+  } else if (asunto.length < 3) {
+    fieldErrors.asunto = "El asunto debe tener al menos 3 caracteres.";
+  }
+
+  if (!descripcion) {
+    fieldErrors.descripcion = "Ingresá una descripción.";
+  } else if (descripcion.length < 8) {
+    fieldErrors.descripcion = "La descripción debe tener al menos 8 caracteres.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return createTramiteError("Revisá los datos del trámite.", fieldErrors);
   }
 
   const supabase = await createClient();
@@ -216,40 +272,48 @@ export async function createTramiteAction(formData: FormData) {
     }>();
 
   if (tipoError) {
-    throw new Error(`No se pudo validar el tipo de tramite: ${tipoError.message}`);
+    return createTramiteError(
+      `No se pudo validar el tipo de trámite: ${tipoError.message}`
+    );
   }
 
   if (!tipo) {
-    throw new Error("El tipo de tramite no está disponible.");
+    return createTramiteError("El tipo de trámite no está disponible.", {
+      tipo_tramite_id: "Seleccioná otro trámite."
+    });
   }
 
   if (tipo.organismo_empresa_id === profile.empresa_id) {
-    throw new Error("No se puede iniciar un trámite ante la misma entidad.");
+    return createTramiteError("No se puede iniciar un trámite ante la misma entidad.");
   }
 
   const { data: tramite, error } = await supabase
     .from("tramites")
     .insert({
       asunto,
+      created_by: user.id,
+      datos_formulario: {},
       descripcion,
       estado: "solicitud_enviada",
       organismo_empresa_id: tipo.organismo_empresa_id,
+      prioridad: "normal",
       solicitante_empresa_id: profile.empresa_id,
+      titulo: asunto,
       tipo_tramite_id: tipo.id
     })
     .select("id")
     .single<{ id: string }>();
 
   if (error) {
-    throw new Error(`No se pudo crear el tramite: ${error.message}`);
+    return createTramiteError(`No se pudo crear el trámite: ${error.message}`);
   }
 
   await insertEvento({
     actorEmpresaId: profile.empresa_id,
     actorId: user.id,
-    descripcion,
+    descripcion: "La empresa inició el trámite.",
     estado: "solicitud_enviada",
-    titulo: `Solicitud iniciada: ${tipo.nombre}`,
+    titulo: "Solicitud enviada",
     tramiteId: tramite.id
   });
 

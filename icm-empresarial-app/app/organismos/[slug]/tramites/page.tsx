@@ -48,34 +48,74 @@ export default async function OrganismoTramitesPage({
           </p>
         </section>
 
-        <Card>
-          <h2 className="text-lg font-semibold text-ink">Trámites disponibles</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <Card className="space-y-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-ink">
+                Trámites disponibles
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                Iniciá un expediente interno directamente ante {organismo.nombre}.
+              </p>
+            </div>
+            <Link
+              className="inline-flex h-10 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-white transition hover:bg-[#183f73]"
+              href={`/tramites/nuevo?organismo=${encodeURIComponent(slug)}`}
+            >
+              Iniciar un trámite
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
             {tipos.map((tipo) => (
-              <div
-                className="rounded-md border border-border bg-surface p-3"
+              <Link
+                className="group flex h-full flex-col rounded-xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"
+                href={`/tramites/nuevo?organismo=${encodeURIComponent(
+                  slug
+                )}&tipo=${encodeURIComponent(tipo.slug)}`}
                 key={tipo.id}
               >
-                <p className="text-sm font-medium text-ink">{tipo.nombre}</p>
-                <p className="mt-1 text-xs text-muted">
-                  {tipo.descripcion ?? "Sin descripción"}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">
+                      {tipo.nombre}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {tipo.categoria ?? "Trámite general"}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    Disponible
+                  </span>
+                </div>
+                <p className="mt-3 line-clamp-3 text-sm text-muted">
+                  {tipo.descripcion ?? "Sin descripción cargada."}
                 </p>
-              </div>
+                <div className="mt-4 flex items-center justify-between gap-3 text-sm">
+                  <span className="text-xs text-muted">
+                    {tipo.requiere_adjunto
+                      ? "Puede requerir adjuntos"
+                      : "Sin adjuntos iniciales"}
+                  </span>
+                  <span className="font-medium text-brand group-hover:underline">
+                    Iniciar trámite
+                  </span>
+                </div>
+              </Link>
             ))}
           </div>
-          <Link
-            className="mt-4 inline-flex text-sm font-medium text-brand hover:underline"
-            href="/tramites/nuevo"
-          >
-            Iniciar un trámite
-          </Link>
         </Card>
 
         {canSeeBandeja ? (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-ink">
-              Bandeja recibida
-            </h2>
+          <section className="space-y-4 border-t border-border pt-6">
+            <div>
+              <h2 className="text-lg font-semibold text-ink">
+                Expedientes recibidos
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                Solicitudes enviadas por empresas a este organismo.
+              </p>
+            </div>
             <TramiteList tramites={tramites} />
           </section>
         ) : null}
