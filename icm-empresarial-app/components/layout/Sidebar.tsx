@@ -3,6 +3,7 @@
 import {
   BarChart3,
   Building2,
+  Calculator,
   ClipboardCheck,
   FileText,
   Gavel,
@@ -121,6 +122,19 @@ function SidebarNav({ items }: { items: SidebarItem[] }) {
 export function Sidebar({ profile }: SidebarProps) {
   const avatarName =
     profile.empresa?.nombre_comercial ?? profile.empresa?.nombre ?? profile.nombre;
+  const isEstudioContable =
+    profile.rol === "profesora_admin" ||
+    profile.empresa?.rubro?.toLowerCase().includes("estudio contable");
+  const visibleOperationItems = isEstudioContable
+    ? [
+        ...operationItems,
+        {
+          href: "/estudio-contable",
+          icon: Calculator,
+          label: "Estudio contable"
+        }
+      ]
+    : operationItems;
 
   return (
     <aside className="hidden min-h-screen shrink-0 border-r border-border bg-white/95 lg:flex lg:w-80 lg:flex-col">
@@ -175,7 +189,7 @@ export function Sidebar({ profile }: SidebarProps) {
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
             Operación
           </p>
-          <SidebarNav items={operationItems} />
+          <SidebarNav items={visibleOperationItems} />
         </div>
 
         {profile.rol === "profesora_admin" ? (

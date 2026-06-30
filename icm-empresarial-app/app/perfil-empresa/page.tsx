@@ -4,6 +4,7 @@ import { EmpresaAvatar } from "@/components/empresas/EmpresaAvatar";
 import { EmpresaBannerUploader } from "@/components/empresas/EmpresaBannerUploader";
 import { EmpresaLogoUploader } from "@/components/empresas/EmpresaLogoUploader";
 import { EmpresaVisualProfileForm } from "@/components/empresas/EmpresaVisualProfileForm";
+import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -87,6 +88,32 @@ export default async function PerfilEmpresaPage() {
                 currentUrl={empresa.banner_url}
                 empresaId={empresa.id}
               />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            description="Administrá las secciones que ven otras empresas dentro de ICM Empresarial."
+            title="Sitio interno"
+          >
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <ActionButton href="/perfil-empresa/web" variant="secondary">
+                Editar web
+              </ActionButton>
+              <ActionButton href="/perfil-empresa/productos" variant="secondary">
+                Productos
+              </ActionButton>
+              <ActionButton
+                href="/perfil-empresa/informacion-legal"
+                variant="secondary"
+              >
+                Información legal
+              </ActionButton>
+              <ActionButton
+                href="/perfil-empresa/documentacion"
+                variant="secondary"
+              >
+                Documentación
+              </ActionButton>
             </div>
           </SectionCard>
 

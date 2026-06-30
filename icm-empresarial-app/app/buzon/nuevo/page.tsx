@@ -4,11 +4,24 @@ import { NewMessageForm } from "@/components/buzon/NewMessageForm";
 import { getDestinatariosDisponibles } from "@/lib/buzon/queries";
 import { requireAuth } from "@/lib/auth/require-auth";
 
-export default async function NuevoMensajePage() {
+type NuevoMensajePageProps = {
+  searchParams: Promise<{
+    destinatario?: string;
+  }>;
+};
+
+export default async function NuevoMensajePage({
+  searchParams
+}: NuevoMensajePageProps) {
   const { profile } = await requireAuth();
+  const { destinatario } = await searchParams;
   const destinatarios = profile.empresa_id
     ? await getDestinatariosDisponibles()
     : [];
+  const initialDestinatarioId =
+    destinatarios.some((item) => item.id === destinatario) && destinatario
+      ? destinatario
+      : "";
 
   return (
     <AppShell profile={profile}>
@@ -35,7 +48,10 @@ export default async function NuevoMensajePage() {
             </p>
           </Card>
         ) : profile.empresa_id ? (
-          <NewMessageForm destinatarios={destinatarios} />
+          <NewMessageForm
+            destinatarios={destinatarios}
+            initialDestinatarioId={initialDestinatarioId}
+          />
         ) : (
           <Card>
             <h2 className="text-lg font-semibold text-ink">

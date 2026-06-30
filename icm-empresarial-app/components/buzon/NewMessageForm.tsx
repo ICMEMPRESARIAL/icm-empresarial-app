@@ -13,6 +13,7 @@ import type { Empresa } from "@/lib/empresas/types";
 
 type NewMessageFormProps = {
   destinatarios: Empresa[];
+  initialDestinatarioId?: string;
 };
 
 const labelByTipo = {
@@ -29,12 +30,17 @@ const initialState: CreateCorrespondenciaFormState = {
   fieldErrors: {}
 };
 
-export function NewMessageForm({ destinatarios }: NewMessageFormProps) {
+export function NewMessageForm({
+  destinatarios,
+  initialDestinatarioId = ""
+}: NewMessageFormProps) {
   const [state, formAction, isPending] = useActionState(
     createCorrespondenciaAction,
     initialState
   );
-  const [selectedDestinatarioId, setSelectedDestinatarioId] = useState("");
+  const [selectedDestinatarioId, setSelectedDestinatarioId] = useState(
+    initialDestinatarioId
+  );
   const selectedDestinatario = useMemo(
     () =>
       destinatarios.find(
