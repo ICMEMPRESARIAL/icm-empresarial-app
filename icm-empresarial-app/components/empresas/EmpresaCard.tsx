@@ -28,7 +28,7 @@ function figuraLabel(value: Empresa["figura_legal"]) {
     return "Banco";
   }
 
-  return "Sin figura legal";
+  return "Dato pendiente";
 }
 
 export function EmpresaCard({
@@ -37,10 +37,25 @@ export function EmpresaCard({
   showOrganismoActions = false
 }: EmpresaCardProps) {
   return (
-    <div className="group h-full overflow-hidden rounded-xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-md">
+    <div className="group h-full overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-md">
+      <div
+        className="h-20"
+        style={{
+          backgroundImage: empresa.banner_url
+            ? `linear-gradient(90deg, rgba(15,23,42,0.44), rgba(15,23,42,0.08)), url(${empresa.banner_url})`
+            : `linear-gradient(135deg, ${
+                empresa.color_marca ?? "#1f4f8f"
+              }, #38bdf8)`,
+          backgroundPosition: "center",
+          backgroundSize: "cover"
+        }}
+      />
       <Link className="block p-5" href={href}>
-        <div className="flex items-start gap-4">
-          <EmpresaAvatar empresa={empresa} />
+        <div className="-mt-12 flex items-end gap-4">
+          <EmpresaAvatar
+            className="h-20 w-20 rounded-2xl border-4 border-white"
+            empresa={empresa}
+          />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="truncate text-lg font-semibold text-ink">
@@ -49,13 +64,15 @@ export function EmpresaCard({
               <EmpresaTypeBadge tipo={empresa.tipo} />
             </div>
             <p className="mt-1 text-sm text-muted">
-              {empresa.rubro ?? "Rubro no informado"}
+              {empresa.rubro ?? "Rubro pendiente"}
             </p>
           </div>
         </div>
 
         <p className="mt-4 line-clamp-3 min-h-16 text-sm leading-6 text-muted">
-          {empresa.descripcion ?? "Sin descripción interna cargada."}
+          {empresa.descripcion ??
+            empresa.slogan ??
+            "Esta empresa todavía no cargó su presentación interna."}
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">

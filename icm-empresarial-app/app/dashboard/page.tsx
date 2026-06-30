@@ -117,58 +117,70 @@ export default async function DashboardPage() {
   ).length;
   const latestMessages = mensajesRecibidos.slice(0, 3);
   const latestTramites = tramites.slice(0, 3);
+  const displayName = empresa?.nombre_comercial ?? empresa?.nombre ?? profile.nombre;
+  const heroGradient = `linear-gradient(135deg, ${
+    empresa?.color_marca ?? "#1f4f8f"
+  }, #0ea5e9 58%, #14b8a6)`;
 
   return (
     <AppShell profile={profile}>
       <div className="space-y-8">
-        <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+        <section className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
           <div
-            className="h-32 bg-brand"
+            className="relative min-h-64"
             style={{
-              backgroundColor: empresa?.color_marca ?? "#1f4f8f",
               backgroundImage: empresa?.banner_url
-                ? `url(${empresa.banner_url})`
-                : undefined,
+                ? `linear-gradient(90deg, rgba(15,23,42,0.76), rgba(15,23,42,0.18)), url(${empresa.banner_url})`
+                : heroGradient,
               backgroundPosition: "center",
               backgroundSize: "cover"
             }}
-          />
-          <div className="px-5 pb-5">
-            <div className="-mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex items-end gap-4">
-                {empresa ? (
-                  <EmpresaAvatar className="h-20 w-20 rounded-2xl" empresa={empresa} />
-                ) : null}
-                <div className="pb-1">
-                  <h1 className="text-3xl font-semibold text-ink">
-                    {empresa?.nombre_comercial ?? empresa?.nombre ?? profile.nombre}
-                  </h1>
-                  <p className="mt-1 text-sm text-muted">
-                    {empresa?.slogan ??
-                      "Operá tu empresa simulada dentro de ICM Empresarial."}
-                  </p>
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.24),transparent_32%)]" />
+            <div className="relative flex min-h-64 flex-col justify-end p-6 text-white sm:p-8">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
+                  {empresa ? (
+                    <EmpresaAvatar
+                      className="h-24 w-24 rounded-3xl border-4 border-white/80"
+                      empresa={empresa}
+                    />
+                  ) : null}
+                  <div className="min-w-0">
+                    <h1 className="text-3xl font-semibold text-white sm:text-4xl">
+                      {displayName}
+                    </h1>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-white/85">
+                      {empresa?.slogan ??
+                        "Operá tu empresa simulada dentro de ICM Empresarial."}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill
+                    label={statusLabel(profile.estado)}
+                    status={profile.estado === "activo" ? "active" : "pending"}
+                  />
+                  {empresa?.figura_legal ? (
+                    <StatusPill label={empresa.figura_legal} status="info" />
+                  ) : null}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 pb-1">
-                <StatusPill
-                  label={statusLabel(profile.estado)}
-                  status={profile.estado === "activo" ? "active" : "pending"}
-                />
-                {empresa?.figura_legal ? (
-                  <StatusPill label={empresa.figura_legal} status="info" />
-                ) : null}
-              </div>
             </div>
+          </div>
 
-            <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-4">
+          <div className="p-5">
+            <dl className="grid gap-3 text-sm sm:grid-cols-4">
               <div>
                 <dt className="font-medium text-ink">Tipo</dt>
-                <dd className="mt-1 text-muted">{empresa?.tipo ?? "No aplica"}</dd>
+                <dd className="mt-1 text-muted">
+                  {empresa?.tipo ?? "Dato pendiente"}
+                </dd>
               </div>
               <div>
                 <dt className="font-medium text-ink">Rubro</dt>
                 <dd className="mt-1 text-muted">
-                  {empresa?.rubro ?? "Sin informar"}
+                  {empresa?.rubro ?? "Este dato todavía no fue cargado."}
                 </dd>
               </div>
               <div>
@@ -176,16 +188,27 @@ export default async function DashboardPage() {
                 <dd className="mt-1 text-muted">
                   {empresa?.curso_anio && empresa.curso_division
                     ? `${empresa.curso_anio}° ${empresa.curso_division}`
-                    : "Sin informar"}
+                    : "Dato pendiente"}
                 </dd>
               </div>
               <div>
                 <dt className="font-medium text-ink">CUIT simulado</dt>
                 <dd className="mt-1 text-muted">
-                  {empresa?.cuit_simulado ?? "Sin informar"}
+                  {empresa?.cuit_simulado ?? "Dato pendiente"}
                 </dd>
               </div>
             </dl>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <ActionButton href="/perfil-empresa" variant="secondary">
+                Editar perfil
+              </ActionButton>
+              {empresa ? (
+                <ActionButton href={`/empresas/${empresa.slug}`} variant="secondary">
+                  Ver ficha
+                </ActionButton>
+              ) : null}
+              <ActionButton href="/tramites/nuevo">Nuevo trámite</ActionButton>
+            </div>
           </div>
         </section>
 

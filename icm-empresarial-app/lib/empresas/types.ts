@@ -37,6 +37,9 @@ export type Empresa = {
   socio_responsable: string | null;
   contacto_email: string | null;
   contacto_telefono: string | null;
+  sitio_web: string | null;
+  instagram: string | null;
+  publicado: boolean;
   sitio_externo: string | null;
   visible_en_directorio: boolean;
   activo: boolean;

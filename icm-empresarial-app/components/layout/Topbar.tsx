@@ -31,7 +31,10 @@ function estadoStatus(estado: ProfileWithEmpresa["estado"]) {
 }
 
 export function Topbar({ profile }: TopbarProps) {
-  const companyName = profile.empresa?.nombre ?? "Sin empresa asociada";
+  const companyName =
+    profile.empresa?.nombre_comercial ??
+    profile.empresa?.nombre ??
+    "Sin empresa asociada";
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
