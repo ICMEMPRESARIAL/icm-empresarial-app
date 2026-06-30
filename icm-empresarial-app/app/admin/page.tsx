@@ -18,6 +18,7 @@ import { getSolicitudesRegistro } from "@/lib/admin/solicitudes/queries";
 import { getAdminUsers } from "@/lib/admin/usuarios/queries";
 import { getAllCorrespondenciaForAdmin } from "@/lib/admin/correspondencia/queries";
 import { getAllTramitesForAdmin } from "@/lib/tramites/queries";
+import { getAllFacturasForAdmin, getAllPagosForAdmin } from "@/lib/facturas/queries";
 import { requireAuth } from "@/lib/auth/require-auth";
 
 const adminCards = [
@@ -52,7 +53,7 @@ const adminCards = [
     title: "Trámites"
   },
   {
-    description: "Facturas, pagos y Regisoft en próxima fase.",
+    description: "Facturas, pagos, comprobantes y seguimiento Regisoft.",
     href: "/admin/facturas",
     icon: FileText,
     title: "Facturas/Pagos"
@@ -66,11 +67,14 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [solicitudes, users, correspondencia, tramites] = await Promise.all([
+  const [solicitudes, users, correspondencia, tramites, facturas, pagos] =
+    await Promise.all([
     getSolicitudesRegistro(),
     getAdminUsers(),
     getAllCorrespondenciaForAdmin("todos"),
-    getAllTramitesForAdmin()
+    getAllTramitesForAdmin(),
+    getAllFacturasForAdmin(),
+    getAllPagosForAdmin()
   ]);
   const solicitudesPendientes = solicitudes.filter(
     (solicitud) => solicitud.estado === "pendiente"
@@ -93,6 +97,12 @@ export default async function AdminPage() {
       tramite.estado === "recibida_por_organismo" ||
       tramite.estado === "en_revision"
   ).length;
+  const facturasPendientes = facturas.filter(
+    (factura) => factura.estado !== "pagada" && factura.estado !== "anulada"
+  ).length;
+  const pendienteRegisoft =
+    facturas.filter((factura) => !factura.registrado_en_regisoft).length +
+    pagos.filter((pago) => !pago.registrado_en_regisoft).length;
 
   return (
     <AppShell profile={profile}>
@@ -118,8 +128,8 @@ export default async function AdminPage() {
           <StatCard label="Mensajes reportados" value={mensajesReportados} />
           <StatCard label="Trámites pendientes" value={tramitesPendientes} />
           <StatCard label="Trámites observados" value={tramitesObservados} />
-          <StatCard label="Facturas pendientes" value={0} />
-          <StatCard label="Pendiente Regisoft" value={0} />
+          <StatCard label="Facturas pendientes" value={facturasPendientes} />
+          <StatCard label="Pendiente Regisoft" value={pendienteRegisoft} />
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

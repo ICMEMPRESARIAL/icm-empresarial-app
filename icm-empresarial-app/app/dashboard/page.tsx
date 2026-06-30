@@ -23,6 +23,7 @@ import {
   getTramitesForCurrentUser
 } from "@/lib/tramites/queries";
 import { getCorrespondenciaForCurrentUser } from "@/lib/buzon/queries";
+import { getFacturacionCounts } from "@/lib/facturas/queries";
 
 const profileHrefPlaceholder = "/perfil-empresa";
 
@@ -98,10 +99,12 @@ export default async function DashboardPage() {
   const empresa = profile.empresa_id
     ? await getEmpresaById(profile.empresa_id, profile)
     : null;
-  const [tramitesCount, tramites, mensajesRecibidos] = await Promise.all([
+  const [tramitesCount, tramites, mensajesRecibidos, facturacionCounts] =
+    await Promise.all([
     getTramitesCountByEstadoForCurrentUser(),
     getTramitesForCurrentUser(),
-    getCorrespondenciaForCurrentUser("recibidos")
+    getCorrespondenciaForCurrentUser("recibidos"),
+    getFacturacionCounts()
   ]);
 
   const unreadMessages = mensajesRecibidos.filter(
@@ -230,10 +233,22 @@ export default async function DashboardPage() {
             }
           />
           <StatCard label="Trámites aprobados" value={tramitesCount.aprobada} />
-          <StatCard label="Facturas emitidas pendientes" value={0} />
-          <StatCard label="Facturas recibidas pendientes" value={0} />
-          <StatCard label="Pagos por confirmar" value={0} />
-          <StatCard label="Pendiente Regisoft" value={0} />
+          <StatCard
+            label="Facturas emitidas pendientes"
+            value={facturacionCounts.emitidasPendientes}
+          />
+          <StatCard
+            label="Facturas recibidas pendientes"
+            value={facturacionCounts.recibidasPendientes}
+          />
+          <StatCard
+            label="Pagos por confirmar"
+            value={facturacionCounts.pagosPendientesConfirmar}
+          />
+          <StatCard
+            label="Pendiente Regisoft"
+            value={facturacionCounts.pendientesRegisoft}
+          />
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
