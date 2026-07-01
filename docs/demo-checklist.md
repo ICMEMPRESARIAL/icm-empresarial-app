@@ -53,3 +53,4 @@ payment-receipts
 - Los productos aceptan URL de imagen; el bucket `company-products` queda listo
   para una mejora posterior.
 - Regisoft es manual: ICM marca estado y referencia, no se integra por API.
+- Codex GitHub workflow verified.
