@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { assertActiveUserCanOperate } from "@/lib/auth/require-active-profile";
 import { logAction } from "@/lib/audit/log-action";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -46,11 +46,9 @@ function parseMoney(value: string | null) {
 }
 
 async function requireEditableEmpresa(empresaId: string) {
-  const { profile, user } = await requireAuth();
-
-  if (profile.estado !== "activo" && profile.rol !== "profesora_admin") {
-    throw new Error("La cuenta debe estar activa para editar.");
-  }
+  const { profile, user } = await assertActiveUserCanOperate(
+    "editar datos de empresa"
+  );
 
   if (profile.rol !== "profesora_admin" && profile.empresa_id !== empresaId) {
     throw new Error("No tenés permisos para editar esta empresa.");
@@ -236,7 +234,9 @@ export async function createLegalDocumentAction(
 }
 
 export async function reviewLegalDocumentAction(formData: FormData) {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await assertActiveUserCanOperate(
+    "revisar documentación legal"
+  );
   const documentoId = formRequired(formData, "documento_id", "Documento");
   const empresaId = formRequired(formData, "empresa_id", "Empresa");
   const estado = formRequired(formData, "estado", "Estado") as DocumentoLegalEstado;

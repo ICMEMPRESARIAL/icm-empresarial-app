@@ -5,14 +5,13 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ImageUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { saveEmpresaBannerUrlAction } from "@/lib/empresas/media-actions";
+import { validateUploadFile } from "@/lib/uploads/validation";
 
 type EmpresaBannerUploaderProps = {
   currentUrl?: string | null;
   empresaId: string;
 };
-
-const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
-const maxFileSize = 2 * 1024 * 1024;
 
 function sanitizeFileName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
@@ -35,13 +34,9 @@ export function EmpresaBannerUploader({
       return;
     }
 
-    if (!allowedTypes.includes(file.type)) {
-      setMessage("Usá PNG, JPG o WebP.");
-      return;
-    }
-
-    if (file.size > maxFileSize) {
-      setMessage("El archivo debe pesar hasta 2 MB.");
+    const validationError = validateUploadFile(file);
+    if (validationError) {
+      setMessage(validationError);
       return;
     }
 
@@ -63,15 +58,10 @@ export function EmpresaBannerUploader({
     const { data } = supabase.storage
       .from("company-banners")
       .getPublicUrl(path);
-    const { error: updateError } = await supabase
-      .from("empresas")
-      .update({ banner_url: data.publicUrl })
-      .eq("id", empresaId);
-
-    if (updateError) {
-      setMessage(
-        `El banner subió, pero no se pudo guardar en la empresa: ${updateError.message}`
-      );
+    try {
+      await saveEmpresaBannerUrlAction(empresaId, data.publicUrl);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No se pudo guardar el banner.");
       setIsUploading(false);
       return;
     }
@@ -105,6 +95,7 @@ export function EmpresaBannerUploader({
           type="file"
         />
       </label>
+      <p className="text-xs text-muted">Imágenes hasta 10 MB.</p>
       {message ? <p className="text-xs text-muted">{message}</p> : null}
     </div>
   );

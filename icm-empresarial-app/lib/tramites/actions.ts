@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { assertActiveUserCanOperate } from "@/lib/auth/require-active-profile";
 import { logAction } from "@/lib/audit/log-action";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -73,21 +73,7 @@ function parseEstado(value: string): TramiteEstado {
 }
 
 async function assertActiveProfile() {
-  const session = await requireAuth();
-
-  if (session.profile.estado !== "activo") {
-    if (session.profile.estado === "pendiente") {
-      throw new Error("Tu cuenta todavía está pendiente de aprobación.");
-    }
-
-    if (session.profile.estado === "suspendido") {
-      throw new Error("Tu usuario está suspendido. No podés operar trámites.");
-    }
-
-    throw new Error("El usuario fue dado de baja y no puede operar trámites.");
-  }
-
-  return session;
+  return assertActiveUserCanOperate("operar trámites");
 }
 
 async function getTramiteForAction(id: string) {
@@ -214,19 +200,17 @@ export async function createTramiteAction(
   _previousState: CreateTramiteFormState,
   formData: FormData
 ): Promise<CreateTramiteFormState> {
-  const { profile, user } = await requireAuth();
+  let activeSession: Awaited<ReturnType<typeof assertActiveUserCanOperate>>;
 
-  if (profile.estado === "pendiente") {
-    return createTramiteError("Tu cuenta todavía está pendiente de aprobación.");
+  try {
+    activeSession = await assertActiveUserCanOperate("crear trámites");
+  } catch (error) {
+    return createTramiteError(
+      error instanceof Error ? error.message : "No podés crear trámites."
+    );
   }
 
-  if (profile.estado === "suspendido") {
-    return createTramiteError("Tu usuario está suspendido. No podés operar trámites.");
-  }
-
-  if (profile.estado === "dado_de_baja") {
-    return createTramiteError("El usuario fue dado de baja y no puede operar trámites.");
-  }
+  const { profile, user } = activeSession;
 
   if (!profile.empresa_id) {
     return createTramiteError("El usuario no tiene una empresa asociada.");

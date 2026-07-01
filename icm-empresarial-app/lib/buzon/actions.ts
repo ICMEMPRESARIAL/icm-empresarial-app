@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { getUserProfile } from "@/lib/auth/get-user-profile";
+import { assertActiveUserCanOperate } from "@/lib/auth/require-active-profile";
 import { logAction } from "@/lib/audit/log-action";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -11,7 +12,6 @@ import {
   type CorrespondenciaDetail,
   type CorrespondenciaTipo
 } from "@/lib/buzon/types";
-import type { ProfileWithEmpresa } from "@/lib/auth/get-user-profile";
 
 export type CreateCorrespondenciaFormState = {
   error: string | null;
@@ -115,42 +115,6 @@ function isParticipante(
   );
 }
 
-async function assertActiveProfileForMessaging(
-  profile: ProfileWithEmpresa,
-  userId: string,
-  action: "enviar" | "responder"
-) {
-  if (profile.estado === "activo") {
-    return;
-  }
-
-  if (profile.estado === "pendiente") {
-    throw new Error("Tu cuenta todavía está pendiente de aprobación.");
-  }
-
-  const accion =
-    action === "enviar"
-      ? "intento_envio_usuario_suspendido"
-      : "intento_respuesta_usuario_suspendido";
-
-  if (profile.estado === "suspendido") {
-    await logAction({
-      accion,
-      actorId: userId,
-      detalle: {
-        profile_id: profile.id
-      },
-      objeto: "profile"
-    });
-
-    throw new Error(
-      "Tu usuario está suspendido. No podés enviar mensajes. Consultá con la profesora administradora."
-    );
-  }
-
-  throw new Error("El usuario fue dado de baja y no puede operar el buzón.");
-}
-
 async function getAuthForBuzonMutation() {
   const session = await getUserProfile();
 
@@ -177,7 +141,10 @@ export async function createCorrespondenciaAction(
   const { profile, user } = await getAuthForBuzonMutation();
 
   try {
-    await assertActiveProfileForMessaging(profile, user.id, "enviar");
+    await assertActiveUserCanOperate(
+      "enviar mensajes",
+      "intento_envio_usuario_suspendido"
+    );
   } catch (error) {
     return createCorrespondenciaError(
       error instanceof Error
@@ -344,7 +311,10 @@ export async function replyCorrespondenciaAction(
   const { profile, user } = await getAuthForBuzonMutation();
 
   try {
-    await assertActiveProfileForMessaging(profile, user.id, "responder");
+    await assertActiveUserCanOperate(
+      "responder mensajes",
+      "intento_respuesta_usuario_suspendido"
+    );
   } catch (error) {
     return replyCorrespondenciaError(
       error instanceof Error
@@ -447,7 +417,9 @@ export async function replyCorrespondenciaAction(
 }
 
 export async function archiveCorrespondenciaAction(formData: FormData) {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await assertActiveUserCanOperate(
+    "archivar correspondencia"
+  );
   const correspondenciaId = getRequiredString(formData, "correspondencia_id");
   const mensaje = await getMensajeForAction(correspondenciaId);
   const canArchive =
@@ -485,7 +457,9 @@ export async function archiveCorrespondenciaAction(formData: FormData) {
 }
 
 export async function reportCorrespondenciaAction(formData: FormData) {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await assertActiveUserCanOperate(
+    "reportar correspondencia"
+  );
   const correspondenciaId = getRequiredString(formData, "correspondencia_id");
   const mensaje = await getMensajeForAction(correspondenciaId);
 
