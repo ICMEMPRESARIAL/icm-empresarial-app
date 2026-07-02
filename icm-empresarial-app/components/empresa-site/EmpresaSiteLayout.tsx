@@ -58,9 +58,9 @@ export function EmpresaSiteLayout({
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
+      <section className="overflow-hidden rounded-[1.75rem] border border-border bg-white shadow-sm">
         <div
-          className="relative min-h-72"
+          className="relative min-h-80"
           style={{
             backgroundImage: banner
               ? `linear-gradient(90deg, rgba(15,23,42,0.78), rgba(15,23,42,0.22)), url(${banner})`
@@ -69,8 +69,8 @@ export function EmpresaSiteLayout({
             backgroundSize: "cover"
           }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.24),transparent_30%)]" />
-          <div className="relative flex min-h-72 flex-col justify-end p-6 text-white sm:p-8">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-slate-950/10 to-transparent" />
+          <div className="relative flex min-h-80 flex-col justify-end p-6 text-white sm:p-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
                 <EmpresaAvatar
@@ -93,6 +93,18 @@ export function EmpresaSiteLayout({
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-white/85">
                     {web?.slogan ?? empresa.slogan ?? empresa.rubro}
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/80">
+                    {empresa.domicilio ? (
+                      <span className="rounded-full bg-white/15 px-3 py-1 backdrop-blur">
+                        {empresa.domicilio}
+                      </span>
+                    ) : null}
+                    {empresa.contacto_email ? (
+                      <span className="rounded-full bg-white/15 px-3 py-1 backdrop-blur">
+                        {empresa.contacto_email}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">

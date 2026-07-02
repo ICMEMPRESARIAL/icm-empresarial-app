@@ -7,8 +7,11 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   DocumentoLegalEstado,
   EmpresaProductoModalidad,
-  EmpresaProductoTipo
+  EmpresaProductoTipo,
+  IvaMes,
+  IvaMovimiento
 } from "@/lib/empresa-site/types";
+import { ivaMeses } from "@/lib/empresa-site/types";
 
 type ActionState = {
   error: string | null;
@@ -43,6 +46,33 @@ function parseMoney(value: string | null) {
 
   const parsed = Number(value.replace(",", "."));
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseIvaMovimiento(value: string | null): IvaMovimiento {
+  if (value === "compra" || value === "venta") {
+    return value;
+  }
+
+  throw new Error("El movimiento de IVA no es válido.");
+}
+
+function parseIvaMes(value: string | null): IvaMes {
+  if (ivaMeses.includes(value as IvaMes)) {
+    return value as IvaMes;
+  }
+
+  throw new Error("El mes de IVA no es válido.");
+}
+
+function parsePeriodoAnio(value: string | null) {
+  const parsed = Number(value);
+  const currentYear = new Date().getFullYear();
+
+  if (Number.isInteger(parsed) && parsed >= 2024 && parsed <= currentYear + 1) {
+    return parsed;
+  }
+
+  return currentYear;
 }
 
 async function requireEditableEmpresa(empresaId: string) {
@@ -228,6 +258,102 @@ export async function createLegalDocumentAction(
     await revalidateEmpresaViews(empresaId);
 
     return { error: null, success: "Documento legal cargado." };
+  } catch (error) {
+    return initialError(error instanceof Error ? error.message : "Error inesperado.");
+  }
+}
+
+export async function upsertIvaDocumentAction(
+  _previousState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const empresaId = formRequired(formData, "empresa_id", "Empresa");
+    const { user } = await requireEditableEmpresa(empresaId);
+    const mes = parseIvaMes(formString(formData, "mes"));
+    const tipoMovimiento = parseIvaMovimiento(
+      formString(formData, "tipo_movimiento")
+    );
+    const periodoAnio = parsePeriodoAnio(formString(formData, "periodo_anio"));
+    const archivoPath = formRequired(formData, "archivo_path", "Archivo PDF");
+    const archivoNombre = formRequired(
+      formData,
+      "archivo_nombre",
+      "Nombre del archivo"
+    );
+    const archivoTipo = formString(formData, "archivo_tipo") ?? "application/pdf";
+
+    if (archivoTipo !== "application/pdf") {
+      return initialError("IVA Compras/Ventas debe cargarse en formato PDF.");
+    }
+
+    const titulo =
+      tipoMovimiento === "compra"
+        ? `IVA Compras - ${mes} ${periodoAnio}`
+        : `IVA Ventas - ${mes} ${periodoAnio}`;
+    const supabase = await createClient();
+    const { data: existing, error: existingError } = await supabase
+      .from("empresa_documentacion_legal")
+      .select("id")
+      .eq("empresa_id", empresaId)
+      .eq("categoria", "iva_compra_venta")
+      .eq("periodo_anio", periodoAnio)
+      .eq("mes", mes)
+      .eq("tipo_movimiento", tipoMovimiento)
+      .maybeSingle<{ id: string }>();
+
+    if (existingError) {
+      return initialError(`No se pudo validar IVA: ${existingError.message}`);
+    }
+
+    const payload = {
+      archivo_nombre: archivoNombre,
+      archivo_path: archivoPath,
+      archivo_size: null,
+      archivo_tipo: archivoTipo,
+      categoria: "iva_compra_venta",
+      created_by: user.id,
+      descripcion:
+        "Documento exportado desde Regisoft para Información Legal y Contable.",
+      emitido_por: "Regisoft",
+      empresa_id: empresaId,
+      estado: "presentado" as const,
+      mes,
+      origen: "regisoft",
+      periodo_anio: periodoAnio,
+      tipo_documento:
+        tipoMovimiento === "compra" ? "iva_compra" : "iva_venta",
+      tipo_movimiento: tipoMovimiento,
+      titulo,
+      updated_at: new Date().toISOString(),
+      visible_publicamente: true
+    };
+
+    const { error } = existing
+      ? await supabase
+          .from("empresa_documentacion_legal")
+          .update(payload)
+          .eq("id", existing.id)
+      : await supabase.from("empresa_documentacion_legal").insert(payload);
+
+    if (error) {
+      return initialError(`No se pudo guardar IVA: ${error.message}`);
+    }
+
+    await logAction({
+      accion: "iva_documento_presentado",
+      actorId: user.id,
+      detalle: {
+        empresa_id: empresaId,
+        mes,
+        periodo_anio: periodoAnio,
+        tipo_movimiento: tipoMovimiento
+      },
+      objeto: "empresa_documentacion_legal"
+    });
+    await revalidateEmpresaViews(empresaId);
+
+    return { error: null, success: "PDF de IVA guardado." };
   } catch (error) {
     return initialError(error instanceof Error ? error.message : "Error inesperado.");
   }
