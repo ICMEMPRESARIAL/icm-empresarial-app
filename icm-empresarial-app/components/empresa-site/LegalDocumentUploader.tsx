@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { FileUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { createLegalDocumentAction } from "@/lib/empresa-site/actions";
+import { validateUploadFile } from "@/lib/uploads/validation";
 import {
   documentoLegalLabels,
   documentoLegalTipos
@@ -45,6 +46,12 @@ export function LegalDocumentUploader({ empresa }: LegalDocumentUploaderProps) {
     setUploadError(null);
 
     if (!file) return;
+
+    const validationError = validateUploadFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
 
     setUploading(true);
     const supabase = createClient();
@@ -117,6 +124,9 @@ export function LegalDocumentUploader({ empresa }: LegalDocumentUploaderProps) {
               Archivo listo: {fileMeta.name}
             </span>
           ) : null}
+          <span className="mt-1 block text-xs text-muted">
+            PDF/Word hasta 25 MB, imágenes hasta 10 MB y video hasta 100 MB.
+          </span>
         </label>
       </div>
       <label className="block text-sm font-medium text-ink">

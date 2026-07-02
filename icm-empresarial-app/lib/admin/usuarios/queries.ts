@@ -1,6 +1,7 @@
 import { requireAuth } from "@/lib/auth/require-auth";
 import { createClient } from "@/lib/supabase/server";
 import type {
+  ConductaEstado,
   ProfileEstado,
   ProfileRole
 } from "@/lib/auth/get-user-profile";
@@ -15,7 +16,12 @@ export type AdminUserItem = {
   estado: ProfileEstado;
   suspendido_motivo: string | null;
   suspendido_at: string | null;
+  suspendido_hasta: string | null;
   suspendido_por: string | null;
+  conducta_estado: ConductaEstado;
+  conducta_observacion: string | null;
+  cantidad_suspensiones: number;
+  ultima_suspension_at: string | null;
   created_at: string;
 };
 

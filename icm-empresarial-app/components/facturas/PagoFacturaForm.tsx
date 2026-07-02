@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { payFacturaAction } from "@/lib/facturas/actions";
 import { mediosPago } from "@/lib/facturas/types";
 import { createClient } from "@/lib/supabase/client";
+import { validateUploadFile } from "@/lib/uploads/validation";
 import { Button } from "@/components/ui/Button";
 import type { FacturaDetail } from "@/lib/facturas/types";
 
@@ -31,6 +32,13 @@ export function PagoFacturaForm({ factura }: { factura: FacturaDetail }) {
     if (!file) return;
 
     setUploading(true);
+    const validationError = validateUploadFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      setUploading(false);
+      return;
+    }
+
     const supabase = createClient();
     const path = `${factura.id}/${Date.now()}-${sanitizeFileName(file.name)}`;
     const { error } = await supabase.storage
@@ -105,6 +113,9 @@ export function PagoFacturaForm({ factura }: { factura: FacturaDetail }) {
         {comprobantePath ? (
           <span className="mt-1 block text-xs text-muted">Comprobante listo.</span>
         ) : null}
+        <span className="mt-1 block text-xs text-muted">
+          PDF/Word hasta 25 MB, imágenes hasta 10 MB y video hasta 100 MB.
+        </span>
       </label>
       <label className="block text-sm font-medium text-ink">
         Observaciones

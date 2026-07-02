@@ -7,6 +7,17 @@ type AppShellProps = {
   profile: ProfileWithEmpresa;
 };
 
+function formatSuspensionUntil(value: string | null) {
+  if (!value) {
+    return "sin fecha de finalización";
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
 export function AppShell({ children, profile }: AppShellProps) {
   return (
     <div className="min-h-screen bg-[#f4f7fb] lg:flex">
@@ -16,7 +27,11 @@ export function AppShell({ children, profile }: AppShellProps) {
         <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
           {profile.estado === "suspendido" ? (
             <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-sm">
-              Usuario suspendido: no podés enviar mensajes ni responder.
+              Usuario suspendido: podés consultar información, pero no podés
+              enviar mensajes, responder, iniciar trámites, editar datos ni
+              operar facturas. Motivo:{" "}
+              {profile.suspendido_motivo ?? "sin motivo informado"}. Vigencia:{" "}
+              {formatSuspensionUntil(profile.suspendido_hasta)}.
             </div>
           ) : null}
           {children}
