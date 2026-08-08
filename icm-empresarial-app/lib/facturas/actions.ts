@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { assertActiveUserCanOperate } from "@/lib/auth/require-active-profile";
 import { logAction } from "@/lib/audit/log-action";
 import { createClient } from "@/lib/supabase/server";
 import type { Factura, MedioPago } from "@/lib/facturas/types";
@@ -95,17 +95,9 @@ function parseItems(raw: string): ParsedItem[] {
 }
 
 async function assertActiveOperator() {
-  const { profile, user } = await requireAuth();
-
-  if (profile.estado !== "activo" && profile.rol !== "profesora_admin") {
-    await logAction({
-      accion: "intento_operacion_facturacion_bloqueada",
-      actorId: user.id,
-      detalle: { estado: profile.estado, profile_id: profile.id },
-      objeto: "profile"
-    });
-    throw new Error("Tu usuario no está activo para operar facturas o pagos.");
-  }
+  const { profile, user } = await assertActiveUserCanOperate(
+    "operar facturas o pagos"
+  );
 
   if (!profile.empresa_id && profile.rol !== "profesora_admin") {
     throw new Error("El usuario no tiene una empresa asociada.");
@@ -404,7 +396,9 @@ export async function updatePagoEstadoAction(formData: FormData) {
 }
 
 export async function markFacturaRegistradaEnRegisoftAction(formData: FormData) {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await assertActiveUserCanOperate(
+    "marcar Regisoft"
+  );
   const facturaId = formRequired(formData, "factura_id", "Factura");
   const referencia = formString(formData, "referencia_regisoft") || null;
   const factura = await getFacturaForAction(facturaId);
@@ -440,7 +434,9 @@ export async function markFacturaRegistradaEnRegisoftAction(formData: FormData) 
 }
 
 export async function markPagoRegistradoEnRegisoftAction(formData: FormData) {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await assertActiveUserCanOperate(
+    "marcar Regisoft"
+  );
   const pagoId = formRequired(formData, "pago_id", "Pago");
   const referencia = formString(formData, "referencia_regisoft") || null;
   const supabase = await createClient();

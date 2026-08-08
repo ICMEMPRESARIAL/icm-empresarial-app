@@ -1,0 +1,13 @@
+{
+  "name": "icm-empresarial",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix icm-empresarial-app run build",
+    "dev": "npm --prefix icm-empresarial-app run dev",
+    "lint": "npm --prefix icm-empresarial-app run lint",
+    "typecheck": "npm --prefix icm-empresarial-app run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

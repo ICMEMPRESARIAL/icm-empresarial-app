@@ -69,6 +69,37 @@ export type EmpresaDocumentoLegal = {
   updated_at: string;
 };
 
+export type IvaMovimiento = "compra" | "venta";
+
+export const ivaMeses = [
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre"
+] as const;
+
+export type IvaMes = (typeof ivaMeses)[number];
+
+export const ivaMesLabels: Record<IvaMes, string> = {
+  abril: "Abril",
+  agosto: "Agosto",
+  julio: "Julio",
+  junio: "Junio",
+  mayo: "Mayo",
+  noviembre: "Noviembre",
+  octubre: "Octubre",
+  septiembre: "Septiembre"
+};
+
+export const ivaMovimientoLabels: Record<IvaMovimiento, string> = {
+  compra: "Compra PDF",
+  venta: "Venta PDF"
+};
+
 export type RevisionContableEstado =
   | "pendiente"
   | "en_revision"
@@ -117,6 +148,8 @@ export const documentoLegalLabels: Record<string, string> = {
   estatuto: "Estatuto",
   habilitacion_municipal: "Habilitación municipal",
   inscripcion_dppj: "Inscripción DPPJ",
+  iva_compra: "IVA Compras",
+  iva_venta: "IVA Ventas",
   libro_actas: "Libro de Actas",
   libro_diario: "Libro Diario",
   libro_inventario_balance: "Libro Inventario y Balance",

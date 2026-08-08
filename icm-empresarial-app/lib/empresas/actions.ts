@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { assertActiveUserCanOperate } from "@/lib/auth/require-active-profile";
 import { logAction } from "@/lib/audit/log-action";
 import { createClient } from "@/lib/supabase/server";
 import type { EmpresaIntegrante } from "@/lib/empresas/types";
@@ -63,19 +63,14 @@ export async function updateEmpresaProfileAction(
   _previousState: UpdateEmpresaProfileState,
   formData: FormData
 ): Promise<UpdateEmpresaProfileState> {
-  const { profile, user } = await requireAuth();
+  const { profile, user } = await assertActiveUserCanOperate(
+    "editar perfil de empresa"
+  );
   const empresaId = formString(formData, "empresa_id");
 
   if (!empresaId) {
     return {
       error: "Falta empresa asociada.",
-      success: null
-    };
-  }
-
-  if (profile.estado !== "activo" && profile.rol !== "profesora_admin") {
-    return {
-      error: "La cuenta debe estar activa para editar la empresa.",
       success: null
     };
   }

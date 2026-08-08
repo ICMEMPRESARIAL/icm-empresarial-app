@@ -12,6 +12,10 @@ export default async function AdminUsuariosPage() {
   }
 
   const users = await getAdminUsers();
+  const suspendidos = users.filter((user) => user.estado === "suspendido").length;
+  const reincidentes = users.filter(
+    (user) => user.conducta_estado === "reincidente"
+  ).length;
 
   return (
     <AppShell profile={profile}>
@@ -25,6 +29,26 @@ export default async function AdminUsuariosPage() {
             Supervisá estados de cuenta, suspensiones y bajas sin eliminar
             historial.
           </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-white p-4">
+              <p className="text-xs text-muted">Usuarios</p>
+              <p className="mt-1 text-2xl font-semibold text-ink">
+                {users.length}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-white p-4">
+              <p className="text-xs text-muted">Suspendidos</p>
+              <p className="mt-1 text-2xl font-semibold text-ink">
+                {suspendidos}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-white p-4">
+              <p className="text-xs text-muted">Reincidentes</p>
+              <p className="mt-1 text-2xl font-semibold text-ink">
+                {reincidentes}
+              </p>
+            </div>
+          </div>
         </section>
         <AdminUsersList users={users} />
       </div>
