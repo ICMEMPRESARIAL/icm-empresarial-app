@@ -49,11 +49,15 @@ async function recordBlockedMessage({
     tipo
   });
 
+  const categoriasBloqueadas = Object.entries(categorias)
+    .filter(([, flagged]) => flagged)
+    .map(([categoria]) => categoria);
+
   await logAction({
     accion: "mensaje_bloqueado_moderacion",
     actorId: session.user.id,
     detalle: {
-      categorias,
+      categorias: categoriasBloqueadas,
       correspondencia_id: correspondenciaId ?? null,
       destinatario_empresa_id: destinatarioEmpresaId ?? null,
       tipo
