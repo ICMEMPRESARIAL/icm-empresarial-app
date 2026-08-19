@@ -11,6 +11,7 @@ const protectedPrefixes = [
   "/estudio-contable",
   "/buzon",
   "/perfil-empresa",
+  "/bienvenida",
   "/admin"
 ] as const;
 
