@@ -19,6 +19,25 @@ type InviteCompanyFormProps = {
 const initialState: InviteFormState = { error: null, success: null };
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function getStateMessage(value: unknown) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "object" && "message" in value) {
+    const message = (value as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+  }
+
+  return "Ocurrió un error inesperado. Revisá los logs de producción para ver el detalle técnico.";
+}
+
 export function InviteCompanyForm({ empresa }: InviteCompanyFormProps) {
   const [email, setEmail] = useState(empresa.contacto_email ?? "");
   const normalizedInitialEmail = (empresa.contacto_email ?? "")
@@ -43,6 +62,8 @@ export function InviteCompanyForm({ empresa }: InviteCompanyFormProps) {
   );
   const pending = saving || inviting;
   const state = inviteState.error || inviteState.success ? inviteState : saveState;
+  const errorMessage = getStateMessage(state.error);
+  const successMessage = getStateMessage(state.success);
 
   return (
     <form action={saveAction} className="rounded-xl border border-border bg-white p-4">
@@ -107,11 +128,11 @@ export function InviteCompanyForm({ empresa }: InviteCompanyFormProps) {
           Podés guardar el campo vacío, pero no se podrá enviar la invitación.
         </p>
       ) : null}
-      {state.error ? (
-        <p className="mt-3 text-sm text-red-700">{state.error}</p>
+      {errorMessage ? (
+        <p className="mt-3 text-sm text-red-700">{errorMessage}</p>
       ) : null}
-      {state.success ? (
-        <p className="mt-3 text-sm text-emerald-700">{state.success}</p>
+      {successMessage ? (
+        <p className="mt-3 text-sm text-emerald-700">{successMessage}</p>
       ) : null}
     </form>
   );
