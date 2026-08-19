@@ -48,6 +48,8 @@ const operationItems: SidebarItem[] = [
 
 const adminItems: SidebarItem[] = [
   { href: "/admin", icon: BarChart3, label: "Admin" },
+  { href: "/admin/invitaciones", icon: Users, label: "Invitaciones" },
+  { href: "/admin/moderacion", icon: ShieldCheck, label: "Moderación IA" },
   { href: "/admin/solicitudes", icon: Inbox, label: "Solicitudes" },
   { href: "/admin/usuarios", icon: Users, label: "Usuarios" },
   { href: "/admin/empresas", icon: Building2, label: "Empresas" },
