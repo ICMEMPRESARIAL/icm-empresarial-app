@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { UpdatePasswordForm } from "@/components/password/UpdatePasswordForm";
 
-export default function UpdatePasswordPage() {
+type UpdatePasswordPageProps = {
+  searchParams: Promise<{ invite?: string }>;
+};
+
+export default async function UpdatePasswordPage({
+  searchParams
+}: UpdatePasswordPageProps) {
+  const params = await searchParams;
+  const isInvite = params.invite === "1";
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
       <section className="w-full max-w-md">
@@ -10,19 +19,23 @@ export default function UpdatePasswordPage() {
             ICM Empresarial
           </p>
           <h1 className="mt-2 text-3xl font-semibold text-ink">
-            Nueva contraseña
+            {isInvite ? "Creá tu contraseña" : "Nueva contraseña"}
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Ingresá y confirmá tu nueva contraseña.
+            {isInvite
+              ? "Este es el último paso para activar tu acceso a ICM Empresarial."
+              : "Ingresá y confirmá tu nueva contraseña."}
           </p>
-          <Link
-            className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
-            href="/login"
-          >
-            Volver a iniciar sesión
-          </Link>
+          {!isInvite ? (
+            <Link
+              className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+              href="/login"
+            >
+              Volver a iniciar sesión
+            </Link>
+          ) : null}
         </div>
-        <UpdatePasswordForm />
+        <UpdatePasswordForm isInvite={isInvite} />
       </section>
     </main>
   );
