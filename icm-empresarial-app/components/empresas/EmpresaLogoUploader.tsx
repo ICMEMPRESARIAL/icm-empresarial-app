@@ -12,7 +12,7 @@ type EmpresaLogoUploaderProps = {
 };
 
 const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
-const maxFileSize = 2 * 1024 * 1024;
+const maxFileSize = 5 * 1024 * 1024;
 
 function sanitizeFileName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
@@ -41,7 +41,7 @@ export function EmpresaLogoUploader({
     }
 
     if (file.size > maxFileSize) {
-      setMessage("El archivo debe pesar hasta 2 MB.");
+      setMessage("El archivo debe pesar hasta 5 MB.");
       return;
     }
 
@@ -61,10 +61,10 @@ export function EmpresaLogoUploader({
     }
 
     const { data } = supabase.storage.from("company-logos").getPublicUrl(path);
-    const { error: updateError } = await supabase
-      .from("empresas")
-      .update({ logo_url: data.publicUrl })
-      .eq("id", empresaId);
+    const { error: updateError } = await supabase.rpc("actualizar_logo_empresa", {
+      p_empresa_id: empresaId,
+      p_logo_url: data.publicUrl
+    });
 
     if (updateError) {
       setMessage(
