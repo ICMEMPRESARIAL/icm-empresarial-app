@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Card } from "@/components/ui/Card";
 import { NewMessageForm } from "@/components/buzon/NewMessageForm";
@@ -14,6 +15,15 @@ export default async function NuevoMensajePage({
   searchParams
 }: NuevoMensajePageProps) {
   const { profile } = await requireAuth();
+
+  if (
+    profile.rol !== "profesora_admin" &&
+    profile.empresa &&
+    !profile.empresa.onboarding_completo
+  ) {
+    redirect("/onboarding");
+  }
+
   const { destinatario } = await searchParams;
   const destinatarios = profile.empresa_id
     ? await getDestinatariosDisponibles()

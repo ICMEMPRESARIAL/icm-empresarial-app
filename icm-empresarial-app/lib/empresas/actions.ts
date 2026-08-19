@@ -34,29 +34,29 @@ function parseIntegrantes(value: FormDataEntryValue | null) {
     throw new Error("La lista de integrantes debe ser un arreglo.");
   }
 
-  return parsed
-    .map((item): EmpresaIntegrante | null => {
-      if (!item || typeof item !== "object") {
-        return null;
-      }
+  return parsed.map((item): EmpresaIntegrante => {
+    if (!item || typeof item !== "object") {
+      throw new Error("Hay un integrante con formato inválido.");
+    }
 
-      const record = item as Record<string, unknown>;
-      const nombre =
-        typeof record.nombre === "string" ? record.nombre.trim() : "";
-      const rol = typeof record.rol === "string" ? record.rol.trim() : "";
-      const email = typeof record.email === "string" ? record.email.trim() : "";
+    const record = item as Record<string, unknown>;
+    const nombre =
+      typeof record.nombre === "string" ? record.nombre.trim() : "";
+    const rol = typeof record.rol === "string" ? record.rol.trim() : "";
+    const email = typeof record.email === "string" ? record.email.trim() : "";
 
-      if (!nombre) {
-        return null;
-      }
+    if (!nombre || !rol || !email) {
+      throw new Error(
+        "Todos los integrantes deben tener nombre, email y rol o cargo."
+      );
+    }
 
-      return {
-        email,
-        nombre,
-        rol
-      };
-    })
-    .filter((item): item is EmpresaIntegrante => Boolean(item));
+    return {
+      email,
+      nombre,
+      rol
+    };
+  });
 }
 
 export async function updateEmpresaProfileAction(
@@ -119,24 +119,22 @@ export async function updateEmpresaProfileAction(
     };
   }
 
-  const { error } = await supabase
-    .from("empresas")
-    .update({
-      actividad_principal: formString(formData, "actividad_principal"),
-      color_marca: formString(formData, "color_marca"),
-      contacto_email: formString(formData, "contacto_email"),
-      contacto_telefono: formString(formData, "contacto_telefono"),
-      descripcion: formString(formData, "descripcion"),
-      domicilio: formString(formData, "domicilio"),
-      instagram: formString(formData, "instagram"),
-      integrantes,
-      nombre_comercial: formString(formData, "nombre_comercial"),
-      responsable: formString(formData, "responsable"),
-      rubro: formString(formData, "rubro"),
-      sitio_web: formString(formData, "sitio_web"),
-      slogan: formString(formData, "slogan")
-    })
-    .eq("id", empresa.id);
+  const { error } = await supabase.rpc("actualizar_perfil_empresa", {
+    p_actividad_principal: formString(formData, "actividad_principal"),
+    p_color_marca: formString(formData, "color_marca"),
+    p_contacto_email: formString(formData, "contacto_email"),
+    p_contacto_telefono: formString(formData, "contacto_telefono"),
+    p_descripcion: formString(formData, "descripcion"),
+    p_domicilio: formString(formData, "domicilio"),
+    p_empresa_id: empresa.id,
+    p_instagram: formString(formData, "instagram"),
+    p_integrantes: integrantes,
+    p_nombre_comercial: formString(formData, "nombre_comercial"),
+    p_responsable: formString(formData, "responsable"),
+    p_rubro: formString(formData, "rubro"),
+    p_sitio_web: formString(formData, "sitio_web"),
+    p_slogan: formString(formData, "slogan")
+  });
 
   if (error) {
     return {

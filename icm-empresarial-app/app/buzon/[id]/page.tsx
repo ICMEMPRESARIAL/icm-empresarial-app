@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { ChatThread } from "@/components/buzon/ChatThread";
 import {
@@ -18,6 +18,15 @@ export default async function BuzonDetailPage({
   params
 }: BuzonDetailPageProps) {
   const { profile } = await requireAuth();
+
+  if (
+    profile.rol !== "profesora_admin" &&
+    profile.empresa &&
+    !profile.empresa.onboarding_completo
+  ) {
+    redirect("/onboarding");
+  }
+
   const { id } = await params;
   let mensaje = await getCorrespondenciaById(id);
 
