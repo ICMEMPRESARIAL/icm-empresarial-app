@@ -15,6 +15,7 @@ import type { Empresa } from "@/lib/empresas/types";
 
 type EmpresaDetailProps = {
   empresa: Empresa;
+  showOperationalActions?: boolean;
 };
 
 function figuraLabel(value: Empresa["figura_legal"]) {
@@ -52,7 +53,10 @@ function normalizeExternalHref(value: string) {
   return `https://${value}`;
 }
 
-export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
+export function EmpresaDetail({
+  empresa,
+  showOperationalActions = false
+}: EmpresaDetailProps) {
   const displayName = empresa.nombre_comercial ?? empresa.nombre;
   const curso =
     empresa.curso_anio && empresa.curso_division
@@ -61,8 +65,9 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
   const gradient = `linear-gradient(135deg, ${
     empresa.color_marca ?? "#1f4f8f"
   }, #0ea5e9 58%, #14b8a6)`;
-  const sitioHref = empresa.sitio_web
-    ? normalizeExternalHref(empresa.sitio_web)
+  const sitioWeb = empresa.sitio_web ?? empresa.sitio_externo;
+  const sitioHref = sitioWeb
+    ? normalizeExternalHref(sitioWeb)
     : null;
   const instagramHref = empresa.instagram
     ? normalizeExternalHref(
@@ -113,7 +118,7 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {empresa.tipo === "organismo" ? (
+                {empresa.tipo === "organismo" && showOperationalActions ? (
                   <ActionButton
                     href={`/organismos/${empresa.slug}/tramites`}
                     icon={<ClipboardCheck className="h-4 w-4" />}
@@ -153,7 +158,7 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Datos operativos">
+      <SectionCard title="Datos de perfil">
         <dl className="grid gap-4 text-sm md:grid-cols-2 xl:grid-cols-3">
           <DetailItem label="Razón social" value={empresa.razon_social} />
           <DetailItem label="Nombre comercial" value={empresa.nombre_comercial} />
@@ -173,6 +178,25 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
             label="Contacto"
             value={empresa.contacto_email ?? empresa.contacto_telefono}
           />
+          <div className="rounded-xl border border-border bg-white p-4">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Sitio web
+            </dt>
+            <dd className="mt-2 text-sm font-medium text-ink">
+              {sitioHref ? (
+                <a
+                  className="text-brand hover:underline"
+                  href={sitioHref}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {sitioWeb}
+                </a>
+              ) : (
+                "Este dato todavía no fue cargado."
+              )}
+            </dd>
+          </div>
         </dl>
       </SectionCard>
 
@@ -211,7 +235,7 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
           >
             Enviar mensaje
           </ActionButton>
-          {empresa.tipo === "organismo" ? (
+          {empresa.tipo === "organismo" && showOperationalActions ? (
             <ActionButton
               href={`/organismos/${empresa.slug}/tramites`}
               icon={<ClipboardCheck className="h-4 w-4" />}
@@ -231,6 +255,7 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
             <ActionButton
               href={sitioHref}
               icon={<ExternalLink className="h-4 w-4" />}
+              rel="noopener noreferrer"
               target="_blank"
               variant="secondary"
             >
@@ -250,15 +275,17 @@ export function EmpresaDetail({ empresa }: EmpresaDetailProps) {
         </div>
       </SectionCard>
 
-      {empresa.sitio_externo ? (
+      {empresa.sitio_externo && !empresa.sitio_web ? (
         <SectionCard title="Referencia externa">
           <p className="text-sm text-muted">
-            El sitio externo queda solo como referencia histórica. La operación
-            principal sucede dentro de ICM Empresarial.
+            El sitio externo queda como referencia histórica. La ficha principal
+            se consulta dentro de ICM Empresarial.
           </p>
           <Link
             className="mt-3 inline-flex text-sm font-medium text-brand hover:underline"
-            href={empresa.sitio_externo}
+            href={normalizeExternalHref(empresa.sitio_externo)}
+            rel="noopener noreferrer"
+            target="_blank"
           >
             Ver referencia
           </Link>

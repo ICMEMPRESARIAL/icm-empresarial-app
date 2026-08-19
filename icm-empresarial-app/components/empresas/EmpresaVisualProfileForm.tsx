@@ -113,8 +113,8 @@ export function EmpresaVisualProfileForm({
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-ink">Identidad visual</h2>
           <p className="mt-1 text-sm text-muted">
-            Estos datos definen cómo se ve la empresa en el directorio, dashboard
-            y ficha pública interna.
+            Estos datos definen cómo se ve la empresa en el directorio y ficha
+            pública interna.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -354,7 +354,7 @@ export function EmpresaVisualProfileForm({
 
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted">
-          Los cambios se reflejan en dashboard, directorio y ficha pública.
+          Los cambios se reflejan en directorio y ficha pública.
         </p>
         <Button className="gap-2" disabled={isPending} type="submit">
           <Save className="h-4 w-4" />

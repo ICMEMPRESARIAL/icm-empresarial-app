@@ -3,12 +3,13 @@ import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Card } from "@/components/ui/Card";
 import { getUserProfile } from "@/lib/auth/get-user-profile";
+import { homePathForProfile } from "@/lib/auth/route-access";
 
 export default async function PendienteAprobacionPage() {
   const session = await getUserProfile();
 
   if (session.profile?.estado === "activo") {
-    redirect(session.profile.rol === "profesora_admin" ? "/admin" : "/dashboard");
+    redirect(homePathForProfile(session.profile));
   }
 
   return (
@@ -23,8 +24,8 @@ export default async function PendienteAprobacionPage() {
             Tu cuenta está pendiente de aprobación por la profesora.
           </p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Cuando sea aprobada, vas a poder entrar al dashboard y usar la
-            plataforma.
+            Cuando sea aprobada, vas a poder entrar a las herramientas
+            habilitadas.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link

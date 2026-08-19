@@ -24,6 +24,7 @@ import {
 } from "@/lib/tramites/queries";
 import { getCorrespondenciaForCurrentUser } from "@/lib/buzon/queries";
 import { getFacturacionCounts } from "@/lib/facturas/queries";
+import { redirectEmpresaFromOperationalRoute } from "@/lib/auth/route-access";
 
 const profileHrefPlaceholder = "/perfil-empresa";
 
@@ -96,6 +97,8 @@ function statusLabel(status: string) {
 
 export default async function DashboardPage() {
   const { profile } = await requireAuth();
+  redirectEmpresaFromOperationalRoute(profile);
+
   const empresa = profile.empresa_id
     ? await getEmpresaById(profile.empresa_id, profile)
     : null;

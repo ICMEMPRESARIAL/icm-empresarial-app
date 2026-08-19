@@ -6,12 +6,14 @@ type EmpresaGridProps = {
   empresas: Empresa[];
   basePath: "/empresas" | "/organismos";
   emptyMessage: string;
+  showOperationalActions?: boolean;
 };
 
 export function EmpresaGrid({
   basePath,
   emptyMessage,
-  empresas
+  empresas,
+  showOperationalActions = false
 }: EmpresaGridProps) {
   if (empresas.length === 0) {
     return <EmptyState description={emptyMessage} title="Sin resultados" />;
@@ -24,7 +26,7 @@ export function EmpresaGrid({
           empresa={empresa}
           href={`${basePath}/${empresa.slug}`}
           key={empresa.id}
-          showOrganismoActions={basePath === "/organismos"}
+          showOrganismoActions={basePath === "/organismos" && showOperationalActions}
         />
       ))}
     </div>

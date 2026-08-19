@@ -92,27 +92,12 @@ export default async function PerfilEmpresaPage() {
           </SectionCard>
 
           <SectionCard
-            description="Administrá las secciones que ven otras empresas dentro de ICM Empresarial."
+            description="Administrá la información visible para otras empresas dentro de ICM Empresarial."
             title="Sitio interno"
           >
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <ActionButton href="/perfil-empresa/web" variant="secondary">
                 Editar web
-              </ActionButton>
-              <ActionButton href="/perfil-empresa/productos" variant="secondary">
-                Productos
-              </ActionButton>
-              <ActionButton
-                href="/perfil-empresa/informacion-legal"
-                variant="secondary"
-              >
-                Información legal
-              </ActionButton>
-              <ActionButton
-                href="/perfil-empresa/documentacion"
-                variant="secondary"
-              >
-                Documentación
               </ActionButton>
             </div>
           </SectionCard>

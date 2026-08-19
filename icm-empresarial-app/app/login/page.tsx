@@ -4,6 +4,7 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { Card } from "@/components/ui/Card";
 import { getUserProfile } from "@/lib/auth/get-user-profile";
+import { homePathForProfile } from "@/lib/auth/route-access";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -51,8 +52,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     redirect("/admin");
   }
 
-  if (session.user) {
-    redirect("/dashboard");
+  if (session.user && session.profile) {
+    redirect(homePathForProfile(session.profile));
   }
 
   return (

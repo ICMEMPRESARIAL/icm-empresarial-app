@@ -6,6 +6,10 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { getEmpresaSiteDataBySlug } from "@/lib/empresa-site/queries";
 import { requireAuth } from "@/lib/auth/require-auth";
+import {
+  canAccessOperationalRoutes,
+  redirectEmpresaFromOperationalRoute
+} from "@/lib/auth/route-access";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -13,6 +17,8 @@ type PageProps = {
 
 export default async function EmpresaContratarnosPage({ params }: PageProps) {
   const { profile } = await requireAuth();
+  redirectEmpresaFromOperationalRoute(profile);
+
   const { slug } = await params;
   const data = await getEmpresaSiteDataBySlug(slug, profile);
 
@@ -20,7 +26,12 @@ export default async function EmpresaContratarnosPage({ params }: PageProps) {
 
   return (
     <AppShell profile={profile}>
-      <EmpresaSiteLayout active="contratarnos" empresa={data.empresa} web={data.web}>
+      <EmpresaSiteLayout
+        active="contratarnos"
+        empresa={data.empresa}
+        showOperationalActions={canAccessOperationalRoutes(profile)}
+        web={data.web}
+      >
         <SectionCard title="Contratarnos">
           <p className="whitespace-pre-line text-sm leading-7 text-muted">
             {data.web?.condiciones_contratacion ??

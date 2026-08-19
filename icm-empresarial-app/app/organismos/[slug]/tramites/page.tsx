@@ -9,6 +9,7 @@ import {
   getTramitesRecibidosForOrganismo
 } from "@/lib/tramites/queries";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { redirectEmpresaFromOperationalRoute } from "@/lib/auth/route-access";
 
 type OrganismoTramitesPageProps = {
   params: Promise<{
@@ -20,6 +21,8 @@ export default async function OrganismoTramitesPage({
   params
 }: OrganismoTramitesPageProps) {
   const { profile } = await requireAuth();
+  redirectEmpresaFromOperationalRoute(profile);
+
   const { slug } = await params;
   const organismo = await getEmpresaBySlug(slug, "organismo", profile);
 
