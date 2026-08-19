@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 
-export function UpdatePasswordForm() {
+type UpdatePasswordFormProps = {
+  isInvite?: boolean;
+};
+
+export function UpdatePasswordForm({ isInvite = false }: UpdatePasswordFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isInvite = searchParams.get("invite") === "1";
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
