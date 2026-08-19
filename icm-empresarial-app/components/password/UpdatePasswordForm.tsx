@@ -8,7 +8,11 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 
-export function UpdatePasswordForm() {
+type UpdatePasswordFormProps = {
+  isInvite?: boolean;
+};
+
+export function UpdatePasswordForm({ isInvite = false }: UpdatePasswordFormProps) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +47,12 @@ export function UpdatePasswordForm() {
       return;
     }
 
+    if (isInvite) {
+      router.replace("/bienvenida");
+      router.refresh();
+      return;
+    }
+
     await supabase.auth.signOut();
     router.replace("/login?password=updated");
     router.refresh();
@@ -64,14 +74,20 @@ export function UpdatePasswordForm() {
           </p>
         ) : null}
         <Button className="w-full" disabled={isSubmitting} type="submit">
-          {isSubmitting ? "Actualizando..." : "Actualizar contraseña"}
+          {isSubmitting
+            ? "Guardando..."
+            : isInvite
+              ? "Crear contraseña y continuar"
+              : "Actualizar contraseña"}
         </Button>
-        <Link
-          className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
-          href="/login"
-        >
-          Volver a iniciar sesión
-        </Link>
+        {!isInvite ? (
+          <Link
+            className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-medium text-ink transition hover:bg-surface"
+            href="/login"
+          >
+            Volver a iniciar sesión
+          </Link>
+        ) : null}
       </form>
     </Card>
   );

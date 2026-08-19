@@ -2,10 +2,8 @@
 
 import { AlertCircle, Send } from "lucide-react";
 import { useActionState, useMemo, useState } from "react";
-import {
-  createCorrespondenciaAction,
-  type CreateCorrespondenciaFormState
-} from "@/lib/buzon/actions";
+import { type CreateCorrespondenciaFormState } from "@/lib/buzon/actions";
+import { createModeratedCorrespondenciaAction } from "@/lib/buzon/moderated-actions";
 import { correspondenciaTipos } from "@/lib/buzon/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -35,7 +33,7 @@ export function NewMessageForm({
   initialDestinatarioId = ""
 }: NewMessageFormProps) {
   const [state, formAction, isPending] = useActionState(
-    createCorrespondenciaAction,
+    createModeratedCorrespondenciaAction,
     initialState
   );
   const [selectedDestinatarioId, setSelectedDestinatarioId] = useState(
@@ -57,7 +55,7 @@ export function NewMessageForm({
         </h2>
         <p className="mt-1 text-sm text-muted">
           Elegí un destinatario activo y redactá el mensaje dentro de la
-          plataforma.
+          plataforma. El contenido se revisa automáticamente antes de enviarse.
         </p>
       </div>
 
@@ -163,7 +161,7 @@ export function NewMessageForm({
         <div className="flex justify-end">
           <Button className="gap-2" disabled={isPending} type="submit">
             <Send className="h-4 w-4" />
-            {isPending ? "Enviando..." : "Enviar mensaje"}
+            {isPending ? "Verificando y enviando..." : "Enviar mensaje"}
           </Button>
         </div>
       </form>

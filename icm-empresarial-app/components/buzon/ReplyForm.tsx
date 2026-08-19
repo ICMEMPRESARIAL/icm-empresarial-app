@@ -2,10 +2,8 @@
 
 import { AlertCircle, Send } from "lucide-react";
 import { useActionState } from "react";
-import {
-  replyCorrespondenciaAction,
-  type ReplyCorrespondenciaFormState
-} from "@/lib/buzon/actions";
+import { type ReplyCorrespondenciaFormState } from "@/lib/buzon/actions";
+import { replyModeratedCorrespondenciaAction } from "@/lib/buzon/moderated-actions";
 import { Button } from "@/components/ui/Button";
 
 type ReplyFormProps = {
@@ -20,7 +18,7 @@ const initialState: ReplyCorrespondenciaFormState = {
 
 export function ReplyForm({ correspondenciaId, redirectTo }: ReplyFormProps) {
   const [state, formAction, isPending] = useActionState(
-    replyCorrespondenciaAction,
+    replyModeratedCorrespondenciaAction,
     initialState
   );
 
@@ -59,7 +57,7 @@ export function ReplyForm({ correspondenciaId, redirectTo }: ReplyFormProps) {
         </label>
         <Button className="gap-2 sm:mb-0.5" disabled={isPending} type="submit">
           <Send className="h-4 w-4" />
-          {isPending ? "Enviando..." : "Responder"}
+          {isPending ? "Verificando..." : "Responder"}
         </Button>
       </div>
     </form>
