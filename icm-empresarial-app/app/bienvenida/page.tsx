@@ -13,6 +13,11 @@ export default async function BienvenidaPage() {
 
   const { profile } = session;
   const isAdmin = profile.rol === "profesora_admin";
+
+  if (!isAdmin && profile.empresa && !profile.empresa.onboarding_completo) {
+    redirect("/onboarding");
+  }
+
   const displayName =
     profile.empresa?.nombre_comercial ?? profile.empresa?.nombre ?? profile.nombre;
 
