@@ -8,9 +8,12 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { getCurrentEmpresaSiteData } from "@/lib/empresa-site/queries";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { redirectEmpresaFromOperationalRoute } from "@/lib/auth/route-access";
 
 export default async function PerfilEmpresaProductosPage() {
   const { profile } = await requireAuth();
+  redirectEmpresaFromOperationalRoute(profile);
+
   const data = await getCurrentEmpresaSiteData();
 
   if (!data) {

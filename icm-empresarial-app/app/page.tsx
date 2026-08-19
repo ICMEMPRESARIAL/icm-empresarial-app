@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/auth/get-user-profile";
+import { homePathForProfile } from "@/lib/auth/route-access";
 
 export default async function HomePage() {
   const session = await getUserProfile();
@@ -16,9 +17,9 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  if (session.profile?.rol === "profesora_admin") {
-    redirect("/admin");
+  if (session.profile) {
+    redirect(homePathForProfile(session.profile));
   }
 
-  redirect("/dashboard");
+  redirect("/login");
 }

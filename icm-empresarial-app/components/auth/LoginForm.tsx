@@ -70,7 +70,7 @@ export function LoginForm() {
       return;
     }
 
-    router.replace(profile.rol === "profesora_admin" ? "/admin" : "/dashboard");
+    router.replace(profile.rol === "profesora_admin" ? "/admin" : "/buzon");
     router.refresh();
   }
 

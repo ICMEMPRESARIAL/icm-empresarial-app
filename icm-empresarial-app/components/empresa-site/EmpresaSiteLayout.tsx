@@ -10,6 +10,7 @@ type EmpresaSiteLayoutProps = {
   active: "inicio" | "productos" | "contratarnos" | "legal" | "contacto";
   children: React.ReactNode;
   empresa: Empresa;
+  showOperationalActions: boolean;
   web: EmpresaWeb | null;
 };
 
@@ -21,30 +22,47 @@ function figuraLabel(value: Empresa["figura_legal"]) {
   return "Figura pendiente";
 }
 
+function normalizeExternalHref(value: string) {
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  return `https://${value}`;
+}
+
 export function EmpresaSiteLayout({
   active,
   children,
   empresa,
+  showOperationalActions,
   web
 }: EmpresaSiteLayoutProps) {
   const displayName = empresa.nombre_comercial ?? empresa.nombre;
   const tabs = [
-    { active: active === "inicio", href: `/empresas/${empresa.slug}`, label: "Inicio" },
     {
-      active: active === "productos",
-      href: `/empresas/${empresa.slug}/productos`,
-      label: "Productos y servicios"
+      active: active === "inicio",
+      href: `/empresas/${empresa.slug}`,
+      label: "Inicio"
     },
-    {
-      active: active === "contratarnos",
-      href: `/empresas/${empresa.slug}/contratarnos`,
-      label: "Contratarnos"
-    },
-    {
-      active: active === "legal",
-      href: `/empresas/${empresa.slug}/informacion-legal`,
-      label: "Información Legal"
-    },
+    ...(showOperationalActions
+      ? [
+          {
+            active: active === "productos",
+            href: `/empresas/${empresa.slug}/productos`,
+            label: "Productos y servicios"
+          },
+          {
+            active: active === "contratarnos",
+            href: `/empresas/${empresa.slug}/contratarnos`,
+            label: "Contratarnos"
+          },
+          {
+            active: active === "legal",
+            href: `/empresas/${empresa.slug}/informacion-legal`,
+            label: "Información Legal"
+          }
+        ]
+      : []),
     {
       active: active === "contacto",
       href: `/empresas/${empresa.slug}/contacto`,
@@ -55,6 +73,8 @@ export function EmpresaSiteLayout({
     empresa.color_marca ?? "#1f4f8f"
   }, #0ea5e9 58%, #14b8a6)`;
   const banner = web?.banner_url ?? empresa.banner_url;
+  const sitioWeb = empresa.sitio_web ?? empresa.sitio_externo;
+  const sitioHref = sitioWeb ? normalizeExternalHref(sitioWeb) : null;
 
   return (
     <div className="space-y-6">
@@ -96,15 +116,27 @@ export function EmpresaSiteLayout({
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                {sitioHref ? (
+                  <ActionButton
+                    href={sitioHref}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    variant="secondary"
+                  >
+                    Sitio web
+                  </ActionButton>
+                ) : null}
                 <ActionButton
                   href={`/buzon/nuevo?destinatario=${empresa.id}`}
                   variant="secondary"
                 >
                   Enviar mensaje
                 </ActionButton>
-                <ActionButton href={`/empresas/${empresa.slug}/contratarnos`}>
-                  Contratar
-                </ActionButton>
+                {showOperationalActions ? (
+                  <ActionButton href={`/empresas/${empresa.slug}/contratarnos`}>
+                    Contratar
+                  </ActionButton>
+                ) : null}
               </div>
             </div>
           </div>

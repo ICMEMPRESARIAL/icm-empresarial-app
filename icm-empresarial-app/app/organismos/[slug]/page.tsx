@@ -3,6 +3,7 @@ import { EmpresaDetail } from "@/components/empresas/EmpresaDetail";
 import { AppShell } from "@/components/layout/AppShell";
 import { getEmpresaBySlug } from "@/lib/empresas/queries";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { canAccessOperationalRoutes } from "@/lib/auth/route-access";
 
 type OrganismoSlugPageProps = {
   params: Promise<{
@@ -23,7 +24,10 @@ export default async function OrganismoSlugPage({
 
   return (
     <AppShell profile={profile}>
-      <EmpresaDetail empresa={organismo} />
+      <EmpresaDetail
+        empresa={organismo}
+        showOperationalActions={canAccessOperationalRoutes(profile)}
+      />
     </AppShell>
   );
 }

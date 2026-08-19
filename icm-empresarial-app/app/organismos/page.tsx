@@ -3,6 +3,7 @@ import { EmpresaGrid } from "@/components/empresas/EmpresaGrid";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { getEmpresasByTipos } from "@/lib/empresas/queries";
+import { canAccessOperationalRoutes } from "@/lib/auth/route-access";
 
 export default async function OrganismosPage() {
   const { profile } = await requireAuth();
@@ -20,6 +21,7 @@ export default async function OrganismosPage() {
           basePath="/organismos"
           emptyMessage="No hay organismos visibles para mostrar."
           empresas={organismos}
+          showOperationalActions={canAccessOperationalRoutes(profile)}
         />
       </div>
     </AppShell>

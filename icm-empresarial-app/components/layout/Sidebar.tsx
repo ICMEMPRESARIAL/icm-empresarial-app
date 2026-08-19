@@ -40,10 +40,20 @@ const platformItems: SidebarItem[] = [
   { href: "/perfil-empresa", icon: ShieldCheck, label: "Perfil" }
 ];
 
+const studentPlatformItems: SidebarItem[] = [
+  { href: "/empresas", icon: Building2, label: "Empresas" },
+  { href: "/organismos", icon: Landmark, label: "Organismos" },
+  { href: "/perfil-empresa", icon: ShieldCheck, label: "Mi empresa" }
+];
+
 const operationItems: SidebarItem[] = [
   { href: "/buzon", icon: Mail, label: "Buzón" },
   { href: "/tramites", icon: ClipboardCheck, label: "Trámites" },
   { href: "/facturas", icon: FileText, label: "Facturas" }
+];
+
+const studentOperationItems: SidebarItem[] = [
+  { href: "/buzon", icon: Mail, label: "Buzón" }
 ];
 
 const adminItems: SidebarItem[] = [
@@ -124,10 +134,11 @@ function SidebarNav({ items }: { items: SidebarItem[] }) {
 export function Sidebar({ profile }: SidebarProps) {
   const avatarName =
     profile.empresa?.nombre_comercial ?? profile.empresa?.nombre ?? profile.nombre;
+  const isAdmin = profile.rol === "profesora_admin";
   const isEstudioContable =
-    profile.rol === "profesora_admin" ||
-    profile.empresa?.rubro?.toLowerCase().includes("estudio contable");
-  const visibleOperationItems = isEstudioContable
+    isAdmin || profile.empresa?.rubro?.toLowerCase().includes("estudio contable");
+  const visiblePlatformItems = isAdmin ? platformItems : studentPlatformItems;
+  const visibleOperationItems = isAdmin && isEstudioContable
     ? [
         ...operationItems,
         {
@@ -136,7 +147,9 @@ export function Sidebar({ profile }: SidebarProps) {
           label: "Estudio contable"
         }
       ]
-    : operationItems;
+    : isAdmin
+      ? operationItems
+      : studentOperationItems;
 
   return (
     <aside className="hidden min-h-screen shrink-0 border-r border-border bg-white/95 lg:flex lg:w-80 lg:flex-col">
@@ -184,7 +197,7 @@ export function Sidebar({ profile }: SidebarProps) {
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
             Plataforma
           </p>
-          <SidebarNav items={platformItems} />
+          <SidebarNav items={visiblePlatformItems} />
         </div>
 
         <div>
@@ -194,7 +207,7 @@ export function Sidebar({ profile }: SidebarProps) {
           <SidebarNav items={visibleOperationItems} />
         </div>
 
-        {profile.rol === "profesora_admin" ? (
+        {isAdmin ? (
           <div>
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
               Administración
