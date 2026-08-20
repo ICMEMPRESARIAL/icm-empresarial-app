@@ -38,6 +38,15 @@ function redirectToLoginError(request: NextRequest, errorCode: string) {
   );
 }
 
+function applySupabaseResponseHeaders(
+  response: NextResponse,
+  headers: Record<string, string>
+) {
+  Object.entries(headers).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+}
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
@@ -46,13 +55,18 @@ export async function GET(request: NextRequest) {
     type === "invite" ? "/update-password?invite=1" : "/dashboard";
   const nextUrl = getSafeNextUrl(request, fallbackPath);
   const redirectResponse = NextResponse.redirect(nextUrl);
+  let supabaseCookieWriteCount = 0;
+  let supabaseHeaderWriteCount = 0;
   const { supabaseKey, supabaseUrl } = getPublicSupabaseEnv();
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, headersToSet) {
+        supabaseCookieWriteCount += cookiesToSet.length;
+        supabaseHeaderWriteCount += Object.keys(headersToSet).length;
+
         cookiesToSet.forEach(({ name, value }) => {
           request.cookies.set(name, value);
         });
@@ -60,6 +74,8 @@ export async function GET(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) => {
           redirectResponse.cookies.set(name, value, options);
         });
+
+        applySupabaseResponseHeaders(redirectResponse, headersToSet);
       }
     }
   });
@@ -89,9 +105,21 @@ export async function GET(request: NextRequest) {
     return redirectToLoginError(request, "invite_invalid");
   }
 
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
     type
+  });
+
+  console.info("ICM auth confirm verifyOtp result", {
+    flow: "verify_otp",
+    type,
+    hasSession: Boolean(data.session?.access_token),
+    hasUser: Boolean(data.user),
+    error: error ? getSafeAuthErrorDetails(error) : null,
+    responseCookieCount: redirectResponse.cookies.getAll().length,
+    responseHeaderCount: Array.from(redirectResponse.headers.keys()).length,
+    supabaseCookieWriteCount,
+    supabaseHeaderWriteCount
   });
 
   if (error) {
@@ -104,16 +132,15 @@ export async function GET(request: NextRequest) {
     return redirectToLoginError(request, "invite_expired");
   }
 
-  const {
-    data: { user },
-    error: userError
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  if (!data.session?.access_token) {
     console.error("ICM auth confirm failure", {
-      flow: "session_after_verify_missing",
+      flow: "verify_otp_session_missing",
       type,
-      ...(userError ? getSafeAuthErrorDetails(userError) : {})
+      hasUser: Boolean(data.user),
+      responseCookieCount: redirectResponse.cookies.getAll().length,
+      responseHeaderCount: Array.from(redirectResponse.headers.keys()).length,
+      supabaseCookieWriteCount,
+      supabaseHeaderWriteCount
     });
 
     return redirectToLoginError(request, "invite_session_missing");
