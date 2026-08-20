@@ -1,4 +1,6 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import type { NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { getSafeAuthErrorDetails } from "@/lib/auth/safe-auth-error";
@@ -33,18 +35,7 @@ function getSafeNextUrl(request: NextRequest, fallbackPath: string) {
 }
 
 function redirectToLoginError(request: NextRequest, errorCode: string) {
-  return NextResponse.redirect(
-    new URL(`/login?error=${errorCode}`, request.url)
-  );
-}
-
-function applySupabaseResponseHeaders(
-  response: NextResponse,
-  headers: Record<string, string>
-) {
-  Object.entries(headers).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
+  redirect(new URL(`/login?error=${errorCode}`, request.url).toString());
 }
 
 export async function GET(request: NextRequest) {
@@ -54,28 +45,29 @@ export async function GET(request: NextRequest) {
   const fallbackPath =
     type === "invite" ? "/update-password?invite=1" : "/dashboard";
   const nextUrl = getSafeNextUrl(request, fallbackPath);
-  const redirectResponse = NextResponse.redirect(nextUrl);
+  const cookieStore = await cookies();
   let supabaseCookieWriteCount = 0;
   let supabaseHeaderWriteCount = 0;
+  let supabaseCookieStoreCount = cookieStore.getAll().length;
+  let supabaseCookieNames: string[] = [];
+  let supabaseHeaderNames: string[] = [];
   const { supabaseKey, supabaseUrl } = getPublicSupabaseEnv();
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
-        return request.cookies.getAll();
+        return cookieStore.getAll();
       },
       setAll(cookiesToSet, headersToSet) {
         supabaseCookieWriteCount += cookiesToSet.length;
         supabaseHeaderWriteCount += Object.keys(headersToSet).length;
-
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value);
-        });
+        supabaseCookieNames = cookiesToSet.map(({ name }) => name);
+        supabaseHeaderNames = Object.keys(headersToSet);
 
         cookiesToSet.forEach(({ name, value, options }) => {
-          redirectResponse.cookies.set(name, value, options);
+          cookieStore.set(name, value, options);
         });
 
-        applySupabaseResponseHeaders(redirectResponse, headersToSet);
+        supabaseCookieStoreCount = cookieStore.getAll().length;
       }
     }
   });
@@ -92,7 +84,7 @@ export async function GET(request: NextRequest) {
       return redirectToLoginError(request, "invite_expired");
     }
 
-    return redirectResponse;
+    redirect(nextUrl.toString());
   }
 
   if (!tokenHash || !type) {
@@ -116,8 +108,9 @@ export async function GET(request: NextRequest) {
     hasSession: Boolean(data.session?.access_token),
     hasUser: Boolean(data.user),
     error: error ? getSafeAuthErrorDetails(error) : null,
-    responseCookieCount: redirectResponse.cookies.getAll().length,
-    responseHeaderCount: Array.from(redirectResponse.headers.keys()).length,
+    cookieStoreCount: supabaseCookieStoreCount,
+    cookieWriteNames: supabaseCookieNames,
+    headerWriteNames: supabaseHeaderNames,
     supabaseCookieWriteCount,
     supabaseHeaderWriteCount
   });
@@ -137,8 +130,9 @@ export async function GET(request: NextRequest) {
       flow: "verify_otp_session_missing",
       type,
       hasUser: Boolean(data.user),
-      responseCookieCount: redirectResponse.cookies.getAll().length,
-      responseHeaderCount: Array.from(redirectResponse.headers.keys()).length,
+      cookieStoreCount: supabaseCookieStoreCount,
+      cookieWriteNames: supabaseCookieNames,
+      headerWriteNames: supabaseHeaderNames,
       supabaseCookieWriteCount,
       supabaseHeaderWriteCount
     });
@@ -146,5 +140,5 @@ export async function GET(request: NextRequest) {
     return redirectToLoginError(request, "invite_session_missing");
   }
 
-  return redirectResponse;
+  redirect(nextUrl.toString());
 }
