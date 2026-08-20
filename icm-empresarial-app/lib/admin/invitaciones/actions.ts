@@ -3,21 +3,40 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { logAction } from "@/lib/audit/log-action";
+import { sendActivationEmail } from "@/lib/activation/email";
+import {
+  createActivationInvite,
+  getRecentActiveInvite,
+  isValidActivationEmail,
+  markInviteSendAttempt,
+  normalizeActivationEmail,
+  type ActivationRole
+} from "@/lib/activation/invites";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+
+export type InviteSendResult = {
+  email: string;
+  empresa: string;
+  status: "enviado" | "omitido" | "fallido";
+  message: string;
+};
 
 export type InviteFormState = {
   error: string | null;
   success: string | null;
+  results?: InviteSendResult[];
 };
 
-type InviteErrorContext = {
-  action: string;
-  email?: string | null;
-  empresaId?: string | null;
+type EmpresaInvite = {
+  id: string;
+  nombre: string;
+  nombre_comercial: string | null;
+  contacto_email: string | null;
+  activo: boolean;
 };
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const initialResult: InviteFormState = { error: null, success: null };
 
 function getString(formData: FormData, field: string) {
   const value = formData.get(field);
@@ -25,12 +44,29 @@ function getString(formData: FormData, field: string) {
 }
 
 function normalizeEmail(value: string) {
-  const clean = value.trim().toLowerCase();
+  const clean = normalizeActivationEmail(value);
   return clean.length > 0 ? clean : null;
 }
 
-function isValidEmail(value: string | null): value is string {
-  return Boolean(value && value.length <= 254 && emailPattern.test(value));
+function getCheckbox(formData: FormData, field: string) {
+  return formData.get(field) === "on";
+}
+
+function inviteFailureState(
+  error: unknown,
+  fallbackMessage: string,
+  context: Record<string, string | null>
+): InviteFormState {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error("ICM activation invite failure", {
+    ...context,
+    message
+  });
+
+  return {
+    error: `${fallbackMessage} Detalle: ${message}`,
+    success: null
+  };
 }
 
 async function requireProfessor() {
@@ -41,178 +77,13 @@ async function requireProfessor() {
   return session;
 }
 
-function getAppUrl() {
-  const configured =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-    process.env.VERCEL_URL;
-
-  if (!configured) {
-    throw new Error(
-      "Falta configurar NEXT_PUBLIC_APP_URL o NEXT_PUBLIC_SITE_URL en Vercel."
-    );
-  }
-
-  const withProtocol = /^https?:\/\//i.test(configured)
-    ? configured
-    : `https://${configured}`;
-
-  try {
-    const url = new URL(withProtocol);
-    if (!["http:", "https:"].includes(url.protocol)) {
-      throw new Error("Protocolo invalido.");
-    }
-
-    return url.origin;
-  } catch {
-    throw new Error(
-      "La URL publica de la app no es valida para enviar invitaciones."
-    );
-  }
-}
-
-function getInviteRedirectTo() {
-  const url = new URL("/auth/confirm", getAppUrl());
-  url.searchParams.set("next", "/update-password?invite=1");
-  return url.toString();
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
-function getStringProp(value: Record<string, unknown>, key: string) {
-  const prop = value[key];
-  return typeof prop === "string" && prop.trim().length > 0
-    ? prop.trim()
-    : null;
-}
-
-function getNumberProp(value: Record<string, unknown>, key: string) {
-  const prop = value[key];
-  if (typeof prop === "number") {
-    return prop;
-  }
-  if (typeof prop === "string" && /^\d+$/.test(prop)) {
-    return Number(prop);
-  }
-  return null;
-}
-
-function getSafeErrorDetails(error: unknown) {
-  if (typeof error === "string") {
-    return { message: error };
-  }
-
-  const record = asRecord(error);
-  const messageFromError = error instanceof Error ? error.message : null;
-  const nameFromError = error instanceof Error ? error.name : null;
-
-  if (!record) {
-    return {
-      message: messageFromError ?? "Error desconocido."
-    };
-  }
-
-  return {
-    code:
-      getStringProp(record, "code") ??
-      getStringProp(record, "error_code") ??
-      undefined,
-    message:
-      messageFromError ??
-      getStringProp(record, "message") ??
-      getStringProp(record, "msg") ??
-      getStringProp(record, "error_description") ??
-      getStringProp(record, "error") ??
-      "Supabase no devolvio detalle publico del error.",
-    name: nameFromError ?? getStringProp(record, "name") ?? undefined,
-    status: getNumberProp(record, "status") ?? undefined
-  };
-}
-
-function userMessageForInviteFailure(
-  error: unknown,
-  fallbackMessage: string
-) {
-  const details = getSafeErrorDetails(error);
-  const rawMessage = details.message;
-  const lowerMessage = rawMessage.toLowerCase();
-
-  if (
-    lowerMessage.includes("next_public_app_url") ||
-    lowerMessage.includes("next_public_site_url") ||
-    lowerMessage.includes("url publica")
-  ) {
-    return `${fallbackMessage} Falta configurar la URL publica de la app para armar el enlace de invitacion.`;
-  }
-
-  if (
-    lowerMessage.includes("redirect") ||
-    lowerMessage.includes("not allowed") ||
-    lowerMessage.includes("invalid url")
-  ) {
-    return `${fallbackMessage} La URL de redireccion no esta permitida en Supabase Auth.`;
-  }
-
-  if (
-    lowerMessage.includes("already") ||
-    lowerMessage.includes("registered") ||
-    lowerMessage.includes("exists")
-  ) {
-    return `${fallbackMessage} Ya existe una cuenta registrada con ese email.`;
-  }
-
-  if (details.status === 429 || lowerMessage.includes("rate limit")) {
-    return `${fallbackMessage} Supabase limito temporalmente los envios. Probá de nuevo en unos minutos.`;
-  }
-
-  if (
-    lowerMessage.includes("smtp") ||
-    lowerMessage.includes("email") ||
-    lowerMessage.includes("mail")
-  ) {
-    return `${fallbackMessage} Supabase no pudo entregar el email de invitacion.`;
-  }
-
-  const suffix = rawMessage && rawMessage !== "{}" ? ` Detalle: ${rawMessage}` : "";
-  return `${fallbackMessage}${suffix}`;
-}
-
-function inviteFailureState(
-  error: unknown,
-  fallbackMessage: string,
-  context: InviteErrorContext
-): InviteFormState {
-  const details = getSafeErrorDetails(error);
-
-  console.error("ICM invite failure", {
-    ...context,
-    ...details
-  });
-
-  return {
-    error: userMessageForInviteFailure(error, fallbackMessage),
-    success: null
-  };
-}
-
 async function getInviteEmpresa(empresaId: string) {
   const supabase = await createClient();
   const { data: empresa, error: empresaError } = await supabase
     .from("empresas")
     .select("id,nombre,nombre_comercial,contacto_email,activo")
     .eq("id", empresaId)
-    .maybeSingle<{
-      id: string;
-      nombre: string;
-      nombre_comercial: string | null;
-      contacto_email: string | null;
-      activo: boolean;
-    }>();
+    .maybeSingle<EmpresaInvite>();
 
   if (empresaError || !empresa) {
     return { empresa: null, error: "No se pudo cargar la empresa." };
@@ -236,6 +107,77 @@ async function updateCompanyInviteEmail(empresaId: string, email: string | null)
   });
 }
 
+function displayEmpresaName(empresa: Pick<EmpresaInvite, "nombre" | "nombre_comercial">) {
+  return empresa.nombre_comercial ?? empresa.nombre;
+}
+
+async function sendActivationInvite({
+  createdBy,
+  email,
+  empresa,
+  nombre,
+  role
+}: {
+  createdBy: string;
+  email: string;
+  empresa: EmpresaInvite | null;
+  nombre: string;
+  role: ActivationRole;
+}): Promise<InviteSendResult> {
+  const admin = createAdminClient();
+  const recent = await getRecentActiveInvite(admin, {
+    createdBy,
+    email,
+    empresa,
+    metadata: { nombre },
+    role
+  });
+
+  if (recent) {
+    return {
+      email,
+      empresa: nombre,
+      message: "Ya tenía una invitación enviada recientemente; no se duplicó.",
+      status: "omitido"
+    };
+  }
+
+  const { activationUrl, invite } = await createActivationInvite({
+    createdBy,
+    email,
+    empresa,
+    metadata: {
+      empresa_id: empresa?.id ?? null,
+      empresa_nombre: empresa ? displayEmpresaName(empresa) : null,
+      icm_role: role,
+      nombre
+    },
+    role
+  });
+
+  try {
+    await sendActivationEmail({
+      activationUrl,
+      email,
+      expiresAt: invite.expires_at,
+      name: nombre,
+      role
+    });
+    await markInviteSendAttempt(invite.id, "enviado");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await markInviteSendAttempt(invite.id, "fallido", message);
+    throw error;
+  }
+
+  return {
+    email,
+    empresa: nombre,
+    message: "Invitación enviada con enlace propio de activación.",
+    status: "enviado"
+  };
+}
+
 export async function updateCompanyInviteEmailAction(
   _state: InviteFormState,
   formData: FormData
@@ -250,7 +192,7 @@ export async function updateCompanyInviteEmailAction(
       return { error: "Falta seleccionar la empresa.", success: null };
     }
 
-    if (email && !isValidEmail(email)) {
+    if (email && !isValidActivationEmail(email)) {
       return { error: "Ingresá un email válido.", success: null };
     }
 
@@ -279,8 +221,8 @@ export async function updateCompanyInviteEmailAction(
     return {
       error: null,
       success: email
-        ? `Email guardado para ${empresa.nombre_comercial ?? empresa.nombre}.`
-        : `Email eliminado para ${empresa.nombre_comercial ?? empresa.nombre}.`
+        ? `Email guardado para ${displayEmpresaName(empresa)}.`
+        : `Email eliminado para ${displayEmpresaName(empresa)}.`
     };
   } catch (error) {
     return inviteFailureState(error, "No se pudo guardar el email.", {
@@ -308,7 +250,7 @@ export async function sendCompanyInviteAction(
       return { error: "Falta seleccionar la empresa.", success: null };
     }
 
-    if (!isValidEmail(submittedEmail)) {
+    if (!isValidActivationEmail(submittedEmail)) {
       return {
         error: "Cargá un email válido antes de enviar la invitación.",
         success: null
@@ -340,44 +282,31 @@ export async function sendCompanyInviteAction(
       }
     }
 
-    const email = submittedEmail;
-    const nombre = empresa.nombre_comercial ?? empresa.nombre;
-    const redirectTo = getInviteRedirectTo();
-    const admin = createAdminClient();
-    const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        empresa_id: empresa.id,
-        empresa_nombre: nombre,
-        icm_invite: true,
-        icm_role: "empresa",
-        nombre
-      },
-      redirectTo
+    const nombre = displayEmpresaName(empresa);
+    const result = await sendActivationInvite({
+      createdBy: user.id,
+      email: submittedEmail,
+      empresa,
+      nombre,
+      role: "empresa"
     });
 
-    if (error) {
-      return inviteFailureState(error, fallbackMessage, {
-        action: "send_company_invite",
-        email,
-        empresaId: empresa.id
-      });
-    }
-
     await logAction({
-      accion: "invitacion_empresa_enviada",
+      accion: "activacion_empresa_enviada",
       actorId: user.id,
-      detalle: { email, empresa_id: empresa.id },
-      objeto: "auth_user_invite"
+      detalle: { email: submittedEmail, empresa_id: empresa.id },
+      objeto: "user_activation_invites"
     });
 
     revalidatePath("/admin/invitaciones");
     return {
       error: null,
-      success: `Invitación enviada a ${nombre} (${email}).`
+      results: [result],
+      success: `${result.message} ${nombre} (${submittedEmail}).`
     };
   } catch (error) {
     return inviteFailureState(error, fallbackMessage, {
-      action: "send_company_invite",
+      action: "send_company_activation_invite",
       email: submittedEmail,
       empresaId
     });
@@ -388,7 +317,7 @@ export async function sendProfessorInviteAction(
   _state: InviteFormState,
   formData: FormData
 ): Promise<InviteFormState> {
-  const email = getString(formData, "email");
+  const email = normalizeEmail(getString(formData, "email"));
   const nombre = getString(formData, "nombre");
 
   try {
@@ -398,40 +327,118 @@ export async function sendProfessorInviteAction(
       return { error: "Completá nombre y email.", success: null };
     }
 
-    if (!isValidEmail(normalizeEmail(email))) {
+    if (!isValidActivationEmail(email)) {
       return { error: "Ingresá un email válido.", success: null };
     }
 
-    const redirectTo = getInviteRedirectTo();
-    const admin = createAdminClient();
-    const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        icm_invite: true,
-        icm_role: "profesora_admin",
-        nombre
-      },
-      redirectTo
+    const result = await sendActivationInvite({
+      createdBy: user.id,
+      email,
+      empresa: null,
+      nombre,
+      role: "profesora_admin"
     });
-
-    if (error) {
-      return inviteFailureState(error, "No se pudo enviar la invitacion.", {
-        action: "send_professor_invite",
-        email
-      });
-    }
 
     await logAction({
-      accion: "invitacion_profesora_enviada",
+      accion: "activacion_profesora_enviada",
       actorId: user.id,
       detalle: { email, nombre },
-      objeto: "auth_user_invite"
+      objeto: "user_activation_invites"
     });
 
-    return { error: null, success: `Invitación enviada a ${email}.` };
+    revalidatePath("/admin/invitaciones");
+    return { error: null, results: [result], success: result.message };
   } catch (error) {
     return inviteFailureState(error, "No se pudo enviar la invitacion.", {
-      action: "send_professor_invite",
-      email
+      action: "send_professor_activation_invite",
+      email,
+      empresaId: null
+    });
+  }
+}
+
+export async function sendBulkCompanyInvitesAction(
+  _state: InviteFormState,
+  formData: FormData
+): Promise<InviteFormState> {
+  if (!getCheckbox(formData, "preview_green") || !getCheckbox(formData, "demo_ok")) {
+    return {
+      error: "Confirmá Preview verde y prueba demo exitosa antes de enviar el lote.",
+      success: null
+    };
+  }
+
+  try {
+    const { user } = await requireProfessor();
+    const supabase = await createClient();
+    const { data: empresas, error } = await supabase
+      .from("empresas")
+      .select("id,nombre,nombre_comercial,contacto_email,activo")
+      .eq("activo", true)
+      .order("nombre");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const results: InviteSendResult[] = [];
+
+    for (const empresa of (empresas ?? []) as EmpresaInvite[]) {
+      const nombre = displayEmpresaName(empresa);
+      const email = normalizeEmail(empresa.contacto_email ?? "");
+
+      if (!isValidActivationEmail(email)) {
+        results.push({
+          email: email ?? "",
+          empresa: nombre,
+          message: "Sin email válido cargado.",
+          status: "omitido"
+        });
+        continue;
+      }
+
+      try {
+        const result = await sendActivationInvite({
+          createdBy: user.id,
+          email,
+          empresa,
+          nombre,
+          role: "empresa"
+        });
+        results.push(result);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        results.push({
+          email,
+          empresa: nombre,
+          message,
+          status: "fallido"
+        });
+      }
+    }
+
+    const sent = results.filter((result) => result.status === "enviado").length;
+    const skipped = results.filter((result) => result.status === "omitido").length;
+    const failed = results.filter((result) => result.status === "fallido").length;
+
+    await logAction({
+      accion: "activacion_empresas_lote",
+      actorId: user.id,
+      detalle: { empresas: results.length, enviadas: sent, fallidas: failed },
+      objeto: "user_activation_invites"
+    });
+
+    revalidatePath("/admin/invitaciones");
+    return {
+      ...initialResult,
+      results,
+      success: `Lote procesado: ${sent} enviadas, ${skipped} omitidas, ${failed} fallidas.`
+    };
+  } catch (error) {
+    return inviteFailureState(error, "No se pudo procesar el lote.", {
+      action: "send_bulk_company_activation_invites",
+      email: null,
+      empresaId: null
     });
   }
 }

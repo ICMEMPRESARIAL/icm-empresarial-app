@@ -21,7 +21,9 @@ const loginErrorMessages: Record<string, string> = {
   invite_invalid:
     "No pudimos validar el enlace de invitación. Abrí el enlace más reciente del email.",
   invite_session_missing:
-    "Validamos el enlace, pero no se pudo iniciar la sesión de invitación. Pedí una nueva invitación."
+    "Validamos el enlace, pero no se pudo iniciar la sesión de invitación. Pedí una nueva invitación.",
+  activation_failed:
+    "La cuenta no pudo activarse con ese enlace. Pedí una nueva invitación."
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
