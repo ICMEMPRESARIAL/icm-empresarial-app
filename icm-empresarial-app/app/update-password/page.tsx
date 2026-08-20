@@ -2,7 +2,13 @@ import Link from "next/link";
 import { UpdatePasswordForm } from "@/components/password/UpdatePasswordForm";
 
 type UpdatePasswordPageProps = {
-  searchParams: Promise<{ invite?: string }>;
+  searchParams: Promise<{
+    code?: string;
+    error?: string;
+    error_code?: string;
+    error_description?: string;
+    invite?: string;
+  }>;
 };
 
 export default async function UpdatePasswordPage({
@@ -35,7 +41,12 @@ export default async function UpdatePasswordPage({
             </Link>
           ) : null}
         </div>
-        <UpdatePasswordForm isInvite={isInvite} />
+        <UpdatePasswordForm
+          authCode={params.code}
+          authError={params.error_description ?? params.error}
+          authErrorCode={params.error_code}
+          isInvite={isInvite}
+        />
       </section>
     </main>
   );
