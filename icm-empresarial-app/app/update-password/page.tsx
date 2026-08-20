@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { UpdatePasswordForm } from "@/components/password/UpdatePasswordForm";
+import { getSafeAuthErrorDetails } from "@/lib/auth/safe-auth-error";
+import { createClient } from "@/lib/supabase/server";
 
 type UpdatePasswordPageProps = {
   searchParams: Promise<{
@@ -16,6 +19,23 @@ export default async function UpdatePasswordPage({
 }: UpdatePasswordPageProps) {
   const params = await searchParams;
   const isInvite = params.invite === "1";
+
+  if (isInvite) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      console.error("ICM update password invite gate failure", {
+        flow: "server_page_get_user",
+        ...(error ? getSafeAuthErrorDetails(error) : {})
+      });
+
+      redirect("/login?error=invite_session_missing");
+    }
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">

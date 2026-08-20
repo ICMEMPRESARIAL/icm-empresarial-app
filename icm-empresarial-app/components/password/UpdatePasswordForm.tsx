@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatSafeAuthErrorDetails,
   getSafeAuthErrorDetails
 } from "@/lib/auth/safe-auth-error";
+import {
+  updatePasswordAction
+} from "@/lib/auth/password-actions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -27,10 +30,11 @@ export function UpdatePasswordForm({
 }: UpdatePasswordFormProps) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isPreparingSession, setIsPreparingSession] = useState(
-    Boolean(authCode || isInvite)
+  const [isPreparingSession, setIsPreparingSession] = useState(Boolean(authCode));
+  const [state, formAction, isSubmitting] = useActionState(
+    updatePasswordAction,
+    { error: null }
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -88,29 +92,6 @@ export function UpdatePasswordForm({
         );
       }
 
-      if (isInvite) {
-        const {
-          data: { session: refreshedSession },
-          error: refreshedSessionError
-        } = await supabase.auth.getSession();
-
-        if (refreshedSessionError) {
-          console.error("ICM invite session refresh failure", {
-            ...getSafeAuthErrorDetails(refreshedSessionError)
-          });
-        }
-
-        if (!refreshedSession) {
-          if (isMounted) {
-            setErrorMessage(
-              "No pudimos validar tu invitacion. Abrí el enlace más reciente del email o pedí una nueva invitacion."
-            );
-            setIsPreparingSession(false);
-          }
-          return;
-        }
-      }
-
       if (isMounted) {
         setIsPreparingSession(false);
       }
@@ -123,56 +104,10 @@ export function UpdatePasswordForm({
     };
   }, [authCode, authError, authErrorCode, isInvite, router]);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setErrorMessage(null);
-    setIsSubmitting(true);
-
-    const formData = new FormData(event.currentTarget);
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirm_password") ?? "");
-
-    if (password.length < 6) {
-      setErrorMessage("La contraseña debe tener al menos 6 caracteres.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMessage("Las contraseñas no coinciden.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
-
-    if (error) {
-      const details = getSafeAuthErrorDetails(error);
-      console.error("ICM update password failure", details);
-      setErrorMessage(
-        `No se pudo actualizar la contraseña. Detalle: ${formatSafeAuthErrorDetails(
-          details
-        )}`
-      );
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (isInvite) {
-      router.replace("/onboarding");
-      router.refresh();
-      return;
-    }
-
-    await supabase.auth.signOut();
-    router.replace("/login?password=updated");
-    router.refresh();
-  }
-
   return (
     <Card>
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form action={formAction} className="space-y-5">
+        {isInvite ? <input name="invite" type="hidden" value="1" /> : null}
         <Input label="Nueva contraseña" name="password" required type="password" />
         <Input
           label="Confirmar contraseña"
@@ -180,9 +115,9 @@ export function UpdatePasswordForm({
           required
           type="password"
         />
-        {errorMessage ? (
+        {errorMessage || state.error ? (
           <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {errorMessage}
+            {errorMessage ?? state.error}
           </p>
         ) : null}
         <Button
