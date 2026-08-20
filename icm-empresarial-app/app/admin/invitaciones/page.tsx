@@ -1,8 +1,15 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
+import { BulkCompanyInvitesForm } from "@/components/admin/invitaciones/BulkCompanyInvitesForm";
 import { InviteCompanyForm } from "@/components/admin/invitaciones/InviteCompanyForm";
 import { InviteProfessorForm } from "@/components/admin/invitaciones/InviteProfessorForm";
 import { requireAuth } from "@/lib/auth/require-auth";
+import {
+  getCompanyInviteSummaries,
+  isValidActivationEmail,
+  normalizeActivationEmail,
+  type InviteSummary
+} from "@/lib/activation/invites";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminInvitacionesPage() {
@@ -22,12 +29,34 @@ export default async function AdminInvitacionesPage() {
     throw new Error(`No se pudieron cargar las empresas: ${error.message}`);
   }
 
-  const rows = (empresas ?? []).map((empresa) => ({
-    contacto_email: empresa.contacto_email as string | null,
-    id: empresa.id as string,
-    nombre:
-      (empresa.nombre_comercial as string | null) ?? (empresa.nombre as string)
-  }));
+  const inviteSummaries = await getCompanyInviteSummaries();
+  const latestInviteByEmpresa = new Map<string, InviteSummary>();
+  inviteSummaries
+    .filter((invite) => invite.rol === "empresa")
+    .forEach((invite) => {
+      if (invite.empresa_id && !latestInviteByEmpresa.has(invite.empresa_id)) {
+        latestInviteByEmpresa.set(invite.empresa_id, invite);
+      }
+    });
+  const rows = (empresas ?? []).map((empresa) => {
+    const latestInvite = latestInviteByEmpresa.get(empresa.id as string);
+    return {
+      contacto_email: empresa.contacto_email as string | null,
+      id: empresa.id as string,
+      invite_sent_at: latestInvite?.sent_at ?? null,
+      invite_status: latestInvite?.send_status ?? null,
+      invite_used_at: latestInvite?.used_at ?? null,
+      nombre:
+        (empresa.nombre_comercial as string | null) ?? (empresa.nombre as string)
+    };
+  });
+  const readyCount = rows.filter((empresa) =>
+    isValidActivationEmail(
+      empresa.contacto_email
+        ? normalizeActivationEmail(empresa.contacto_email)
+        : null
+    )
+  ).length;
 
   return (
     <AppShell profile={profile}>
@@ -36,8 +65,8 @@ export default async function AdminInvitacionesPage() {
           <p className="text-sm font-medium text-brand">Admin</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">Invitaciones</h1>
           <p className="mt-2 max-w-3xl text-sm text-muted">
-            Las invitaciones crean cuentas activas asociadas a la empresa correcta.
-            El usuario define su contraseña desde el enlace recibido por email.
+            Las invitaciones usan enlaces propios de ICM. El usuario crea su
+            contraseña desde /activar y entra con sesión normal de email y clave.
           </p>
         </section>
 
@@ -55,9 +84,11 @@ export default async function AdminInvitacionesPage() {
           <div>
             <h2 className="text-xl font-semibold text-ink">Empresas</h2>
             <p className="mt-1 text-sm text-muted">
-              Primero probá con una empresa de prueba. Después enviá las invitaciones reales.
+              Primero probá con una empresa de prueba. Después enviá el lote
+              cuando Preview esté verde.
             </p>
           </div>
+          <BulkCompanyInvitesForm readyCount={readyCount} totalCount={rows.length} />
           <div className="space-y-3">
             {rows.map((empresa) => (
               <InviteCompanyForm empresa={empresa} key={empresa.id} />

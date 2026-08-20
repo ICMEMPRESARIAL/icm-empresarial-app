@@ -13,6 +13,9 @@ type InviteCompanyFormProps = {
     id: string;
     nombre: string;
     contacto_email: string | null;
+    invite_status?: string | null;
+    invite_used_at?: string | null;
+    invite_sent_at?: string | null;
   };
 };
 
@@ -64,6 +67,13 @@ export function InviteCompanyForm({ empresa }: InviteCompanyFormProps) {
   const state = inviteState.error || inviteState.success ? inviteState : saveState;
   const errorMessage = getStateMessage(state.error);
   const successMessage = getStateMessage(state.success);
+  const statusText = empresa.invite_used_at
+    ? "Activada"
+    : empresa.invite_sent_at
+      ? `Enviada ${new Date(empresa.invite_sent_at).toLocaleString("es-AR")}`
+      : empresa.invite_status === "fallido"
+        ? "Último envío falló"
+        : "Sin invitación enviada";
 
   return (
     <form action={saveAction} className="rounded-xl border border-border bg-white p-4">
@@ -76,6 +86,7 @@ export function InviteCompanyForm({ empresa }: InviteCompanyFormProps) {
               ? "Email cargado para invitación"
               : "Sin email cargado"}
           </p>
+          <p className="mt-1 text-xs font-medium text-brand">{statusText}</p>
         </div>
         <label className="block text-sm font-medium text-ink">
           Email de contacto
