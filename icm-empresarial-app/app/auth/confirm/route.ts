@@ -1,7 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 import { getSafeAuthErrorDetails } from "@/lib/auth/safe-auth-error";
-import { createClient } from "@/lib/supabase/server";
+
+function getPublicSupabaseEnv() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Faltan variables publicas de Supabase.");
+  }
+
+  return { supabaseKey, supabaseUrl };
+}
 
 function getSafeNextUrl(request: NextRequest, fallbackPath: string) {
   const next = request.nextUrl.searchParams.get("next");
@@ -34,7 +45,24 @@ export async function GET(request: NextRequest) {
   const fallbackPath =
     type === "invite" ? "/update-password?invite=1" : "/dashboard";
   const nextUrl = getSafeNextUrl(request, fallbackPath);
-  const supabase = await createClient();
+  const redirectResponse = NextResponse.redirect(nextUrl);
+  const { supabaseKey, supabaseUrl } = getPublicSupabaseEnv();
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
+
+        cookiesToSet.forEach(({ name, value, options }) => {
+          redirectResponse.cookies.set(name, value, options);
+        });
+      }
+    }
+  });
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -48,7 +76,7 @@ export async function GET(request: NextRequest) {
       return redirectToLoginError(request, "invite_expired");
     }
 
-    return NextResponse.redirect(nextUrl);
+    return redirectResponse;
   }
 
   if (!tokenHash || !type) {
@@ -76,9 +104,20 @@ export async function GET(request: NextRequest) {
     return redirectToLoginError(request, "invite_expired");
   }
 
-  if (type === "invite") {
-    return NextResponse.redirect(nextUrl);
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    console.error("ICM auth confirm failure", {
+      flow: "session_after_verify_missing",
+      type,
+      ...(userError ? getSafeAuthErrorDetails(userError) : {})
+    });
+
+    return redirectToLoginError(request, "invite_session_missing");
   }
 
-  return NextResponse.redirect(nextUrl);
+  return redirectResponse;
 }

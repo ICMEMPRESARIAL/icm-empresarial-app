@@ -8,13 +8,28 @@ import { homePathForProfile } from "@/lib/auth/route-access";
 
 type LoginPageProps = {
   searchParams: Promise<{
+    error?: string;
     password?: string;
   }>;
+};
+
+const loginErrorMessages: Record<string, string> = {
+  dado_de_baja:
+    "Esta cuenta no puede acceder a la plataforma. Consultá con la profesora administradora.",
+  invite_expired:
+    "La invitación venció o ya fue usada. Pedí una nueva invitación.",
+  invite_invalid:
+    "No pudimos validar el enlace de invitación. Abrí el enlace más reciente del email.",
+  invite_session_missing:
+    "Validamos el enlace, pero no se pudo iniciar la sesión de invitación. Pedí una nueva invitación."
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getUserProfile();
   const params = await searchParams;
+  const loginError = params.error
+    ? loginErrorMessages[params.error] ?? null
+    : null;
 
   if (session.profile?.estado === "pendiente") {
     redirect("/pendiente-aprobacion");
@@ -73,6 +88,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         {params.password === "updated" ? (
           <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
             Contraseña actualizada. Ya podés ingresar.
+          </p>
+        ) : null}
+        {loginError ? (
+          <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {loginError}
           </p>
         ) : null}
         <LoginForm />
