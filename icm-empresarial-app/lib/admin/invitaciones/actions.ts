@@ -73,7 +73,9 @@ function getAppUrl() {
 }
 
 function getInviteRedirectTo() {
-  return `${getAppUrl()}/update-password?invite=1`;
+  const url = new URL("/auth/confirm", getAppUrl());
+  url.searchParams.set("next", "/update-password?invite=1");
+  return url.toString();
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
